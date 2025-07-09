@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chrono-Pixel Clash</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="640" height="480"></canvas>
+
+        <div id="loadingText" class="game-ui">
+            <p>Loading Assets: <span id="assetProgress">0/0</span></p>
+        </div>
+
+        <div id="mainMenu" class="game-ui">
+            <h1>
+                <img src="assets/images/Logo.png" alt="Chrono-Pixel Clash Logo" id="gameLogo">
+            </h1>
+            <button id="startGameBtn" class="menu-button">Start Game</button>
+            <button id="continueGameBtn" class="menu-button" style="display:none;">Continue Game</button>
+            <button id="optionsBtn" class="menu-button">Options</button>
+            <button id="creditsBtn" class="menu-button">Credits</button>
+        </div>
+
+        <!-- Moved difficultySelection outside mainMenu -->
+        <div id="difficultySelection" class="game-ui" style="display: none;">
+            <h2>SELECT DIFFICULTY</h2>
+            <button id="easyBtn" class="menu-button selected">Easy</button>
+            <button id="normalBtn" class="menu-button">Normal</button>
+            <button id="hardBtn" class="menu-button">Hard</button>
+            <button id="backToLevelMapBtn" class="menu-button">BACK TO LEVEL MAP</button>
+        </div>
+
+        <div id="optionsMenu" class="game-ui" style="display: none;">
+            <h2>OPTIONS</h2>
+            <button id="toggleSoundBtn" class="menu-button">TOGGLE SOUND (OFF)</button>
+            <label for="volumeSlider" style="display: block; margin-top: 15px; color: var(--image-menu-text-color);">VOLUME:</label>
+            <input type="range" id="volumeSlider" min="0" max="100" value="50">
+            <button id="toggleFullscreenBtn" class="menu-button">TOGGLE FULLSCREEN</button>
+            <button id="backToMainBtn" class="menu-button">BACK TO MAIN MENU</button>
+        </div>
+
+        <div id="creditsScreen" class="game-ui" style="display: none;">
+            <h2>CREDITS</h2>
+            <p>Game Developed by: Chrono-Pixel Team</p>
+            <p>Art & Design: Pixel Artist</p>
+            <p>Music & Sound: Retro Synthwave</p>
+            <p style="margin-top: 20px;">Special Thanks to the Open Source Community!</p>
+            <button id="backToMainFromCreditsBtn" class="menu-button">BACK TO MAIN MENU</button>
+        </div>
+
+        <div id="shopMenu" class="game-ui" style="display: none;">
+            <h2 style="grid-column: span 2;">SHOP</h2>
+            <div style="grid-column: span 2; text-align: center;">
+                <p>Money: <span id="currentMoneyDisplay">0</span></p>
+                <p>Experience: <span id="currentExperienceDisplay">0</span></p>
+            </div>
+            
+            <div id="shipPurchaseColumn" class="shop-column">
+                <h3>Available Ships</h3>
+                <!-- Ship buttons will be dynamically added here -->
+            </div>
+            
+            <div id="shipUpgradeColumn" class="shop-column">
+                <h3>Ship Upgrades (Money)</h3>
+                <p>Current Ship: <span id="currentShipTypeDisplay">Ship 1</span></p>
+                <p>Ability: <span id="currentShipAbilityName">None</span></p>
+                <p>Description: <span id="currentShipAbilityDescription">No special ability.</span></p>
+                <!-- Upgrade buttons will be dynamically added here -->
+            </div>
+            
+            <hr style="grid-column: span 2;">
+            <button id="continueShopBtn" class="menu-button" style="grid-column: span 2;">Continue</button>
+            <p style="font-size: 0.8em; color: gray; margin-top: 10px; grid-column: span 2;">(Game saved automatically)</p>
+        </div>
+
+        <!-- NEW: Level Map Screen -->
+        <div id="levelMapScreen" class="game-ui" style="display: none;">
+            <h2>SELECT LEVEL</h2>
+            <div id="levelButtonsContainer" class="level-map-grid">
+                <!-- Level buttons will be dynamically added here by Game.js -->
+            </div>
+            <p id="levelPlotDisplay" style="margin-top: 20px; text-align: center; max-width: 80%; margin-left: auto; margin-right: auto;"></p>
+            <button id="levelMapBackToMainBtn" class="menu-button">BACK TO MAIN MENU</button>
+        </div>
+
+        <div id="gameOverScreen" class="game-ui" style="display: none;">
+            <h2>GAME OVER!</h2>
+            <p>Final Score: <span id="gameOverScore">0</span></p>
+            <p>Base Health: <span id="gameOverBaseHealth">0</span></p>
+            <button id="gameOverBackToMainBtn" class="menu-button">BACK TO MAIN MENU</button>
+        </div>
+
+        <div id="victoryScreen" class="game-ui" style="display: none;">
+            <h2>VICTORY!</h2>
+            <p>Final Score: <span id="victoryScore">0</span></p>
+            <p style="margin-top: 20px;">Congratulations, Earth is safe!</p>
+            <button id="victoryBackToMainBtn" class="menu-button">BACK TO MAIN MENU</button>
+        </div>
+    </div>
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>
