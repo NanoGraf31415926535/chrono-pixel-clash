@@ -6,6 +6,7 @@ import { Projectile } from './classes/Projectile.js';
 import { Enemy } from './classes/Enemy.js';
 import { PowerUp } from './classes/PowerUp.js';
 import { Explosion } from './classes/Explosion.js';
+import { Shop } from './classes/Shop.js'; // Import the new Shop class
 
 export class Game {
     constructor() {
@@ -75,14 +76,14 @@ export class Game {
 
         this.levels = [
             {},
-            { enemySpawnRate: 2.2, enemySpeedMultiplier: 1.0, enemyHealthMultiplier: 1.0, maxEnemiesOnScreen: 10, scoreToClear: 100, newEnemyTypes: ['monster1'], background: 'terrain1', plot: 'Sector Alpha is under attack! Clear out the initial wave of invaders and secure our perimeter.', bossConfig: { spriteName: 'boss1Sprite', healthMultiplier: 1, speedMultiplier: 0.1, fireRate: 2, projectileSpeed: 150, projectileDamage: 10, specialAttack: 'laserBarrage' } },
+            { enemySpawnRate: 2.2, enemySpeedMultiplier: 1.0, enemyHealthMultiplier: 0.5, maxEnemiesOnScreen: 10, scoreToClear: 100, newEnemyTypes: ['monster1'], background: 'terrain1', plot: 'Sector Alpha is under attack! Clear out the initial wave of invaders and secure our perimeter.', bossConfig: { spriteName: 'boss1Sprite', healthMultiplier: 1, speedMultiplier: 0.1, fireRate: 2, projectileSpeed: 150, projectileDamage: 10, specialAttack: 'scatterShot' } },
             { enemySpawnRate: 2.1, enemySpeedMultiplier: 1.0, enemyHealthMultiplier: 1.1, maxEnemiesOnScreen: 12, scoreToClear: 200, newEnemyTypes: ['monster1', 'monster2'], background: 'terrain2', plot: 'The enemy is adapting. Push through the asteroid belt and eliminate their scout forces.', bossConfig: { spriteName: 'boss2Sprite', healthMultiplier: 2, speedMultiplier: 0.1, fireRate: 1.8, projectileSpeed: 160, projectileDamage: 12, specialAttack: 'summonMinions' } },
             { enemySpawnRate: 2.0, enemySpeedMultiplier: 1.1, enemyHealthMultiplier: 1.1, maxEnemiesOnScreen: 14, scoreToClear: 300, newEnemyTypes: ['monster1', 'monster2', 'monster3'], background: 'terrain3', plot: 'Intel suggests a heavy enemy presence near the gas giant. Brace for a tougher fight!', bossConfig: { spriteName: 'boss3Sprite', healthMultiplier: 5, speedMultiplier: 0.1, fireRate: 1.6, projectileSpeed: 170, projectileDamage: 15, specialAttack: 'chargeBeam' } },
             { enemySpawnRate: 1.9, enemySpeedMultiplier: 1.1, enemyHealthMultiplier: 1.2, maxEnemiesOnScreen: 16, scoreToClear: 450, newEnemyTypes: ['monster2', 'monster3', 'monster4'], background: 'terrain4', plot: 'They\'ve deployed new, faster units. Show them the might of the Alliance in the nebulae of Sector Gamma.', bossConfig: { spriteName: 'boss4Sprite', healthMultiplier: 6, speedMultiplier: 0.1, fireRate: 1.5, projectileSpeed: 180, projectileDamage: 18, specialAttack: 'laserBarrage' } },
             { enemySpawnRate: 1.8, enemySpeedMultiplier: 1.2, enemyHealthMultiplier: 1.2, maxEnemiesOnScreen: 18, scoreToClear: 600, newEnemyTypes: ['monster3', 'monster4', 'monster5'], background: 'terrain1', plot: 'Deep space mining operations are threatened. Protect the resource extractors from the incoming swarm.', bossConfig: { spriteName: 'boss5Sprite', healthMultiplier: 10, speedMultiplier: 0.1, fireRate: 1.4, projectileSpeed: 190, projectileDamage: 20, specialAttack: 'summonMinions' } },
-            { enemySpawnRate: 1.7, enemySpeedMultiplier: 1.2, enemyHealthMultiplier: 1.3, maxEnemiesOnScreen: 20, scoreToClear: 750, newEnemyTypes: ['monster4', 'monster5', 'monster6'], background: 'terrain2', plot: 'An enemy mothership has been sighted! Clear its escort to prepare for a full assault.', bossConfig: { spriteName: 'boss6Sprite', healthMultiplier: 11, speedMultiplier: 0.1, fireRate: 1.3, projectileSpeed: 200, projectileDamage: 22, specialAttack: 'chargeBeam' } },
+            { enemySpawnRate: 1.7, enemySpeedMultiplier: 1.2, enemyHealthMultiplier: 1.3, maxEnemiesOnScreen: 20, scoreToClear: 750, newEnemyTypes: ['monster4', 'monster5', 'monster6'], background: 'terrain2', plot: 'An enemy mothership has been sighted! Clear its escort to prepare for a full assault.', bossConfig: { spriteName: 'boss6Sprite', healthMultiplier: 11, speedMultiplier: 0.1, fireRate: 1.3, projectileSpeed: 200, projectileDamage: 22, specialAttack: 'scatterShot' } },
             { enemySpawnRate: 1.6, enemySpeedMultiplier: 1.3, enemyHealthMultiplier: 1.3, maxEnemiesOnScreen: 22, scoreToClear: 900, newEnemyTypes: ['monster5', 'monster6', 'monster7'], background: 'terrain3', plot: 'The enemy is retreating to their last stronghold. Pursue them through the treacherous debris field.', bossConfig: { spriteName: 'boss7Sprite', healthMultiplier: 13, speedMultiplier: 0.1, fireRate: 1.2, projectileSpeed: 210, projectileDamage: 25, specialAttack: 'laserBarrage' } },
-            { enemySpawnRate: 1.5, enemySpeedMultiplier: 1.3, enemyHealthMultiplier: 1.4, maxEnemiesOnScreen: 24, scoreToClear: 1100, newEnemyTypes: ['monster1', 'monster3', 'monster5', 'monster7'], background: 'terrain4', plot: 'This is it, pilot! The final push. Eliminate the remaining resistance and secure Earth\'s future!', bossConfig: { spriteName: 'boss8Sprite', healthMultiplier: 12, speedMultiplier: 0.1, fireRate: 1.1, projectileSpeed: 220, projectileDamage: 30, specialAttack: 'summonMinions' } },
+            { enemySpawnRate: 1.5, enemySpeedMultiplier: 1.3, enemyHealthMultiplier: 1.4, maxEnemiesOnScreen: 24, scoreToClear: 1100, newEnemyTypes: ['monster1', 'monster3', 'monster5', 'monster7'], background: 'terrain4', plot: 'This is it, pilot! The final push. Eliminate the remaining resistance and secure Earth\'s future!', bossConfig: { spriteName: 'boss8Sprite', healthMultiplier: 12, speedMultiplier: 0.1, fireRate: 1.1, projectileSpeed: 220, projectileDamage: 30, specialAttack: 'chargeBeam' } },
             {}
         ];
 
@@ -194,6 +195,8 @@ export class Game {
 
         this.boss = null;
         this.isBossPhase = false;
+        
+        this.shop = new Shop(this);
 
         this.mainMenuDiv = document.getElementById('mainMenu');
         this.loadingTextDiv = document.getElementById('loadingText');
@@ -217,17 +220,10 @@ export class Game {
 
         this.creditsScreenDiv = document.getElementById('creditsScreen');
         this.backToMainFromCreditsBtn = document.getElementById('backToMainFromCreditsBtn');
-
-        this.shopMenuDiv = document.getElementById('shopMenu');
-        this.currentMoneyDisplay = document.getElementById('currentMoneyDisplay');
-        this.currentExperienceDisplay = document.getElementById('currentExperienceDisplay');
-        this.shipPurchaseColumn = document.getElementById('shipPurchaseColumn');
-        this.shipUpgradeColumn = document.getElementById('shipUpgradeColumn');
-
-        this.currentShipTypeDisplay = document.getElementById('currentShipTypeDisplay');
-        this.currentShipAbilityName = document.getElementById('currentShipAbilityName');
-        this.currentShipAbilityDescription = document.getElementById('currentShipAbilityDescription');
-        this.continueShopBtn = document.getElementById('continueShopBtn');
+        
+        this.shopHangarDiv = document.getElementById('shopHangar');
+        this.closeShipyardBtn = document.getElementById('closeShipyardBtn');
+        this.closeUpgradeBtn = document.getElementById('closeUpgradeBtn');
 
         this.levelMapScreenDiv = document.getElementById('levelMapScreen');
         this.levelButtonsContainer = document.getElementById('levelButtonsContainer');
@@ -287,7 +283,8 @@ export class Game {
         this.backToMainBtn.addEventListener('click', () => this.returnToMainMenu());
         this.backToMainFromCreditsBtn.addEventListener('click', () => this.returnToMainMenu());
         
-        this.continueShopBtn.addEventListener('click', () => this.handleShopAction('continue'));
+        this.closeShipyardBtn.addEventListener('click', () => this.shop.closeMenu());
+        this.closeUpgradeBtn.addEventListener('click', () => this.shop.closeMenu());
         
         this.gameOverBackToMainBtn.addEventListener('click', () => this.returnToMainMenu(true));
         this.victoryBackToMainBtn.addEventListener('click', () => this.returnToMainMenu(true));
@@ -304,6 +301,13 @@ export class Game {
         this.assetLoader.loadImage('playerSprite', 'assets/images/sprites/player_sprite.png');
         this.assetLoader.loadImage('baseSprite', 'assets/images/Base.png');
         
+        this.assetLoader.loadImage('captain_sprite', 'assets/images/sprites/captain_sprite.png');
+        this.assetLoader.loadImage('shop_background', 'assets/images/backgrounds/shop_background.png');
+        this.assetLoader.loadImage('shipyard_console', 'assets/images/sprites/shipyard_console.png');
+        this.assetLoader.loadImage('upgrade_terminal', 'assets/images/sprites/upgrade_terminal.png');
+        this.assetLoader.loadImage('starmap_table', 'assets/images/sprites/starmap_table.png');
+
+
         for (let i = 1; i <= 8; i++) {
             this.assetLoader.loadImage(`boss${i}Sprite`, `assets/images/sprites/Boss_${i}.png`);
         }
@@ -317,7 +321,6 @@ export class Game {
         this.assetLoader.loadImage('bombPowerUpSprite', 'assets/images/powerups/powerup_bomb.png');
         this.assetLoader.loadImage('slowPowerUpSprite', 'assets/images/powerups/powerup_slow.png');
         this.assetLoader.loadImage('explosionSprite', 'assets/images/effects/explosion_1.png');
-        this.assetLoader.loadImage('upgradeMenuBackground', 'assets/images/backgrounds/Upgrade_menu.JPG');
 
         for (let i = 1; i <= 7; i++) {
             this.assetLoader.loadImage(`ship${i}Sprite`, `assets/images/Starships/Ship_${i}.png`);
@@ -370,8 +373,15 @@ export class Game {
     gameLoop(currentTime) {
         this.deltaTime = (currentTime - this.lastTime) / 1000;
         this.lastTime = currentTime;
-        this.update(this.deltaTime);
-        this.draw();
+        
+        if (this.currentState === GAME_STATES.SHOP) {
+            this.shop.update(this.deltaTime, this.keys);
+            this.shop.draw();
+        } else {
+            this.update(this.deltaTime);
+            this.draw();
+        }
+        
         requestAnimationFrame(this.gameLoop.bind(this));
     }
     
@@ -538,40 +548,36 @@ export class Game {
     }
     
     updateShipShopUI() {
-        this.currentMoneyDisplay.textContent = this.money;
-        this.currentExperienceDisplay.textContent = this.experience;
+        document.getElementById('currentMoneyDisplayShipyard').textContent = this.money;
+        document.getElementById('currentExperienceDisplayShipyard').textContent = this.experience;
+        document.getElementById('currentMoneyDisplayUpgrade').textContent = this.money;
+        document.getElementById('upgradeShipName').textContent = this.currentShipType.replace('ship', 'Ship ');
 
-        this.shipPurchaseColumn.innerHTML = '';
-        this.shipUpgradeColumn.innerHTML = '';
+        const shipPurchaseColumn = document.getElementById('shipPurchaseColumn');
+        const shipUpgradeColumn = document.getElementById('shipUpgradeColumn');
+        shipPurchaseColumn.innerHTML = '';
+        shipUpgradeColumn.innerHTML = '';
 
         Object.keys(this.shipConfigs).forEach(shipType => {
             const config = this.shipConfigs[shipType];
             const button = document.createElement('button');
             button.classList.add('menu-button', 'ship-button');
-            button.id = `buy${shipType.charAt(0).toUpperCase() + shipType.slice(1)}Btn`;
-
+            
             const isOwned = this.ownedShips.includes(shipType);
             const isEquipped = this.currentShipType === shipType;
 
             if (isEquipped) {
                 button.textContent = `${shipType.replace('ship', 'Ship ')} (Equipped)`;
                 button.disabled = true;
-                button.classList.add('selected');
             } else if (isOwned) {
-                button.textContent = `${shipType.replace('ship', 'Ship ')} (Owned - Click to Equip)`;
-                button.disabled = false;
+                button.textContent = `Equip ${shipType.replace('ship', 'Ship ')}`;
                 button.addEventListener('click', () => this.handleShopAction('equipShip', shipType));
             } else {
-                button.textContent = `Buy ${shipType.replace('ship', 'Ship ')} - Cost: ${config.cost} EXP`;
+                button.textContent = `Buy ${shipType.replace('ship', 'Ship ')} - ${config.cost} EXP`;
                 button.disabled = this.experience < config.cost;
                 button.addEventListener('click', () => this.handleShopAction('buyShip', shipType));
             }
-            this.shipPurchaseColumn.appendChild(button);
-
-            button.addEventListener('mouseenter', () => this.displayShipAbilityInfo(shipType));
-            button.addEventListener('focus', () => this.displayShipAbilityInfo(shipType));
-            button.addEventListener('mouseleave', () => this.displayShipAbilityInfo(this.currentShipType));
-            button.addEventListener('blur', () => this.displayShipAbilityInfo(this.currentShipType));
+            shipPurchaseColumn.appendChild(button);
         });
 
         const currentShipConfig = this.shipConfigs[this.currentShipType];
@@ -581,56 +587,35 @@ export class Game {
                 const currentLevel = this.currentShipUpgrades[upgradeType];
                 const upgradeButton = document.createElement('button');
                 upgradeButton.classList.add('menu-button', 'upgrade-button');
-                upgradeButton.id = `upgrade${upgradeType.charAt(0).toUpperCase() + upgradeType.slice(1)}Btn`;
 
                 if (currentLevel < upgradeInfo.maxLevel) {
                     const cost = upgradeInfo.costs[currentLevel];
-                    upgradeButton.textContent = `Upgrade ${upgradeType.charAt(0).toUpperCase() + upgradeType.slice(1)} (${currentLevel}/${upgradeInfo.maxLevel}) - Cost: ${cost}`;
+                    upgradeButton.textContent = `Upgrade ${upgradeType} (${currentLevel}/${upgradeInfo.maxLevel}) - ${cost} M`;
                     upgradeButton.disabled = this.money < cost;
                     upgradeButton.addEventListener('click', () => this.handleShopAction('upgradeShip', upgradeType));
                 } else {
-                    upgradeButton.textContent = `Upgrade ${upgradeType.charAt(0).toUpperCase() + upgradeType.slice(1)} (MAX)`;
+                    upgradeButton.textContent = `Upgrade ${upgradeType} (MAX)`;
                     upgradeButton.disabled = true;
                 }
-                this.shipUpgradeColumn.appendChild(upgradeButton);
+                shipUpgradeColumn.appendChild(upgradeButton);
             }
         }
-
         this.displayShipAbilityInfo(this.currentShipType);
-
-        this.currentMenuButtons = Array.from(this.shipPurchaseColumn.querySelectorAll('.menu-button'))
-                                    .concat(Array.from(this.shipUpgradeColumn.querySelectorAll('.menu-button')))
-                                    .filter(btn => !btn.disabled);
-        this.currentMenuButtons.push(this.continueShopBtn);
-        this.updateSelectedMenuButton();
     }
 
     displayShipAbilityInfo(shipType) {
         const config = this.shipConfigs[shipType];
         if (config) {
-            this.currentShipTypeDisplay.textContent = shipType.replace('ship', 'Ship ');
-            this.currentShipAbilityName.textContent = config.ability.name;
-            this.currentShipAbilityDescription.textContent = config.ability.description;
-        } else {
-            this.currentShipTypeDisplay.textContent = 'N/A';
-            this.currentShipAbilityName.textContent = 'N/A';
-            this.currentShipAbilityDescription.textContent = 'No special ability.';
+            document.getElementById('currentShipTypeDisplay').textContent = shipType.replace('ship', 'Ship ');
+            document.getElementById('currentShipAbilityName').textContent = config.ability.name;
+            document.getElementById('currentShipAbilityDescription').textContent = config.ability.description;
         }
     }
 
     handleShopAction(actionType, type = null) {
-        if (this.currentState !== GAME_STATES.SHOP) return;
-
-        let purchased = false;
-        let equipped = false;
-        let upgraded = false;
+        let purchased = false, equipped = false, upgraded = false;
 
         switch (actionType) {
-            case 'continue':
-                this.showMenu(GAME_STATES.LEVEL_MAP);
-                if (this.soundEnabled && this.bgMusic) this.bgMusic.play().catch(e => console.error(e));
-                this.saveGame();
-                return;
             case 'buyShip':
                 const configToBuy = this.shipConfigs[type];
                 if (configToBuy && !this.ownedShips.includes(type) && this.experience >= configToBuy.cost) {
@@ -674,15 +659,14 @@ export class Game {
     }
 
     loadShipUpgrades(shipType) {
-        const defaultUpgrades = { damage: 0, fireRate: 0, health: 0, speed: 0 };
-        return defaultUpgrades;
+        return { damage: 0, fireRate: 0, health: 0, speed: 0 };
     }
 
     showMenu(menuState) {
         this.mainMenuDiv.style.display = 'none';
         this.optionsMenuDiv.style.display = 'none';
         this.creditsScreenDiv.style.display = 'none';
-        this.shopMenuDiv.style.display = 'none';
+        this.shopHangarDiv.style.display = 'none';
         this.gameOverScreenDiv.style.display = 'none';
         this.victoryScreenDiv.style.display = 'none';
         this.loadingTextDiv.style.display = 'none';
@@ -696,7 +680,6 @@ export class Game {
         switch (menuState) {
             case GAME_STATES.MAIN_MENU:
                 this.mainMenuDiv.style.display = 'block';
-                this.hideDifficultySelection();
                 this.startGameBtn.style.display = 'block';
                 this.updateMainMenuButtons();
                 this.currentMenuButtons = [
@@ -713,8 +696,8 @@ export class Game {
                 this.currentMenuButtons = [this.backToMainFromCreditsBtn];
                 break;
             case GAME_STATES.SHOP:
-                this.shopMenuDiv.style.display = 'block';
-                this.updateShipShopUI();
+                this.shopHangarDiv.style.display = 'block';
+                this.currentMenuButtons = [];
                 break;
             case GAME_STATES.LEVEL_MAP:
                 this.levelMapScreenDiv.style.display = 'flex';
@@ -742,8 +725,6 @@ export class Game {
                 this.loadingTextDiv.style.display = 'block';
                 this.currentMenuButtons = [];
                 break;
-            case GAME_STATES.BOSS_FIGHT:
-                break;
             default:
                 this.currentMenuButtons = [];
                 break;
@@ -765,30 +746,19 @@ export class Game {
     }
     
     update(deltaTime) {
+        if (this.currentState === GAME_STATES.SHOP) return;
+
         for (const abilityName in this.shipAbilityCooldowns) {
             this.shipAbilityCooldowns[abilityName] -= deltaTime;
-            if (this.shipAbilityCooldowns[abilityName] <= 0) {
-                delete this.shipAbilityCooldowns[abilityName];
-            }
+            if (this.shipAbilityCooldowns[abilityName] <= 0) delete this.shipAbilityCooldowns[abilityName];
         }
         for (const abilityName in this.activeShipAbilities) {
             this.activeShipAbilities[abilityName].timer -= deltaTime;
-            if (this.activeShipAbilities[abilityName].timer <= 0) {
-                this.deactivateShipAbility(abilityName);
-            }
+            if (this.activeShipAbilities[abilityName].timer <= 0) this.deactivateShipAbility(abilityName);
         }
-
-        if (this.currentState === GAME_STATES.SHOP) {
-            this.updateShipShopUI();
-            return;
-        } else if (this.currentState === GAME_STATES.LEVEL_MAP) { 
-            return;
-        } else if (this.currentState === GAME_STATES.DIFFICULTY_SELECTION) { 
-            return;
-        } else if (this.currentState === GAME_STATES.PAUSED) {
-            return;
-        } else if (this.currentState === GAME_STATES.LOADING || this.currentState === GAME_STATES.GAME_OVER || this.currentState === GAME_STATES.VICTORY) {
-            return;
+        for (const type in this.activePowerUpEffects) {
+            this.activePowerUpEffects[type].timer -= deltaTime;
+            if (this.activePowerUpEffects[type].timer <= 0) this.deactivatePowerUpEffect(type);
         }
         
         if (this.player) {
@@ -800,109 +770,68 @@ export class Game {
             }
         }
 
-        this.projectiles.forEach((projectile, i) => {
-            projectile.update(deltaTime, this.canvas);
-            if (!projectile.active) this.projectiles.splice(i, 1);
-        });
-
-        this.enemyProjectiles.forEach((projectile, i) => {
-            projectile.update(deltaTime, this.canvas);
-            if (!projectile.active) this.enemyProjectiles.splice(i, 1);
-        });
-
-        this.explosions.forEach((explosion, i) => {
-            explosion.update(deltaTime);
-            if (!explosion.active) this.explosions.splice(i, 1);
-        });
-
-        this.powerUps.forEach((powerUp, i) => {
-            powerUp.update(deltaTime, this.canvas);
-            if (!powerUp.active) this.powerUps.splice(i, 1);
-        });
-
-        for (const type in this.activePowerUpEffects) {
-            this.activePowerUpEffects[type].timer -= deltaTime;
-            if (this.activePowerUpEffects[type].timer <= 0) {
-                this.deactivatePowerUpEffect(type);
-            }
-        }
-
-        const currentTime = performance.now() / 1000;
+        this.projectiles.forEach((p, i) => { p.update(deltaTime, this.canvas); if (!p.active) this.projectiles.splice(i, 1); });
+        this.enemyProjectiles.forEach((p, i) => { p.update(deltaTime, this.canvas); if (!p.active) this.enemyProjectiles.splice(i, 1); });
+        this.explosions.forEach((e, i) => { e.update(deltaTime); if (!e.active) this.explosions.splice(i, 1); });
+        this.powerUps.forEach((p, i) => { p.update(deltaTime, this.canvas); if (!p.active) this.powerUps.splice(i, 1); });
 
         if (this.currentState === GAME_STATES.PLAYING) {
+            const currentTime = performance.now() / 1000;
             if (currentTime - this.lastEnemySpawnTime >= this.enemySpawnRate) {
                 this.spawnEnemy();
                 this.lastEnemySpawnTime = currentTime;
             }
+        }
 
-            for (let i = this.enemies.length - 1; i >= 0; i--) {
-                const enemy = this.enemies[i];
-                enemy.update(deltaTime, this.canvas);
-                if (!enemy.active) {
-                    this.enemies.splice(i, 1);
-                    continue;
-                }
-                if (checkCollision(enemy, this.base)) {
-                    enemy.active = false;
-                    this.base.health -= 10;
-                    if (this.soundEnabled && this.baseHitSound) {
-                        this.baseHitSound.currentTime = 0;
-                        this.baseHitSound.play().catch(e => console.error("Error playing base hit sound:", e));
-                    }
-                    if (this.base.health <= 0) {
-                        this.base.health = 0;
-                        this.showMenu(GAME_STATES.GAME_OVER);
-                        if (this.bgMusic && this.soundEnabled) this.bgMusic.pause();
-                        this.saveGame();
-                        return;
-                    }
+        for (let i = this.enemies.length - 1; i >= 0; i--) {
+            const enemy = this.enemies[i];
+            enemy.update(deltaTime, this.canvas);
+            if (!enemy.active) {
+                this.enemies.splice(i, 1);
+                continue;
+            }
+            if (checkCollision(enemy, this.base)) {
+                enemy.active = false;
+                this.base.health -= 10;
+                if (this.soundEnabled && this.baseHitSound) this.baseHitSound.play().catch(e => console.error(e));
+                if (this.base.health <= 0) {
+                    this.base.health = 0;
+                    this.showMenu(GAME_STATES.GAME_OVER);
+                    if (this.bgMusic && this.soundEnabled) this.bgMusic.pause();
+                    this.saveGame();
+                    return;
                 }
             }
-
-            for (let i = this.projectiles.length - 1; i >= 0; i--) {
-                const projectile = this.projectiles[i];
+            for (let j = this.projectiles.length - 1; j >= 0; j--) {
+                const projectile = this.projectiles[j];
                 if (!projectile.active) continue;
-                for (let j = this.enemies.length - 1; j >= 0; j--) {
-                    const enemy = this.enemies[j];
-                    if (!enemy.active) continue;
-                    if (checkCollision(projectile, enemy)) {
-                        projectile.active = false;
-                        enemy.health -= projectile.damage;
-                        if (enemy.health <= 0) {
-                            enemy.active = false;
-                            const difficulty = this.difficultySettings[this.currentDifficulty];
-                            this.score += Math.round(10 * difficulty.scoreRate);
-                            this.money += Math.round(5 * difficulty.moneyRate);
-                            this.experience += Math.round(10 * difficulty.expRate);
-                            if (Math.random() < 0.3) {
-                                this.spawnPowerUp(enemy);
-                            }
-                            this.explosions.push(new Explosion(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, this.assetLoader.getAsset('explosionSprite')));
-                            if (this.soundEnabled && this.explosionSound) {
-                                this.explosionSound.currentTime = 0;
-                                this.explosionSound.play().catch(e => console.error("Error playing explosion sound:", e));
-                            }
-                        }
-                        break; 
+                if (checkCollision(projectile, enemy)) {
+                    projectile.active = false;
+                    enemy.health -= projectile.damage;
+                    if (enemy.health <= 0) {
+                        enemy.active = false;
+                        const difficulty = this.difficultySettings[this.currentDifficulty];
+                        this.score += Math.round(10 * difficulty.scoreRate);
+                        this.money += Math.round(5 * difficulty.moneyRate);
+                        this.experience += Math.round(10 * difficulty.expRate);
+                        if (Math.random() < 0.3) this.spawnPowerUp(enemy);
+                        this.explosions.push(new Explosion(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, this.assetLoader.getAsset('explosionSprite')));
+                        if (this.soundEnabled && this.explosionSound) this.explosionSound.play().catch(e => console.error(e));
                     }
+                    break;
                 }
-            }
-
-            if (this.score >= this.levelScoreToClear && this.enemies.length === 0 && !this.isBossPhase) {
-                this.startBossPhase();
-                return;
             }
         }
-        
-        if (this.currentState === GAME_STATES.BOSS_FIGHT && this.boss && this.boss.active) {
-            const bossActions = this.boss.update(deltaTime, this.canvas, this.player);
-            if (bossActions.newProjectiles.length > 0) {
-                this.enemyProjectiles.push(...bossActions.newProjectiles);
-            }
-            if (bossActions.newEnemies.length > 0) {
-                this.enemies.push(...bossActions.newEnemies);
-            }
 
+        if (this.currentState === GAME_STATES.BOSS_FIGHT && this.boss && this.boss.active) {
+            const bossActions = this.boss.update(deltaTime, this.canvas, this.player, this.projectiles, this);
+            
+            if (bossActions.newProjectiles.length > 0) this.enemyProjectiles.push(...bossActions.newProjectiles);
+            if (bossActions.newEnemies.length > 0) {
+                bossActions.newEnemies.forEach(newEnemy => {
+                    if (this.enemies.length < this.maxEnemiesOnScreen) this.enemies.push(newEnemy);
+                });
+            }
             for (let i = this.projectiles.length - 1; i >= 0; i--) {
                 const projectile = this.projectiles[i];
                 if (!projectile.active) continue;
@@ -910,10 +839,7 @@ export class Game {
                     projectile.active = false;
                     this.boss.health -= projectile.damage;
                     this.explosions.push(new Explosion(projectile.x, projectile.y, this.assetLoader.getAsset('explosionSprite')));
-                    if (this.soundEnabled && this.explosionSound) {
-                        this.explosionSound.currentTime = 0;
-                        this.explosionSound.play().catch(e => console.error("Error playing explosion sound:", e));
-                    }
+                    if (this.soundEnabled && this.explosionSound) this.explosionSound.play().catch(e => console.error(e));
                     if (this.boss.health <= 0) {
                         this.boss.active = false;
                         this.bossDefeated();
@@ -942,33 +868,37 @@ export class Game {
             }
         }
 
+        if (this.currentState === GAME_STATES.PLAYING && this.score >= this.levelScoreToClear && this.enemies.length === 0 && !this.isBossPhase) {
+            this.startBossPhase();
+            return;
+        }
 
-        if (this.player && !this.playerInvincible) {
-            if (!this.isBossPhase) {
-                for (let i = this.enemies.length - 1; i >= 0; i--) {
-                    const enemy = this.enemies[i];
-                    if (!enemy.active) continue;
-                    if (checkCollision(this.player, enemy)) {
-                        this.playerHealth -= 20;
-                        enemy.active = false;
-                        this.playerInvincible = true;
-                        this.invincibilityTimer = this.invincibilityDuration;
-                        if (this.playerHealth <= 0) {
-                            this.showMenu(GAME_STATES.GAME_OVER);
-                            if (this.bgMusic && this.soundEnabled) this.bgMusic.pause();
-                            this.saveGame();
-                            return;
-                        }
-                    }
-                }
-            }
-
+        if (this.playerInvincible) {
+            this.invincibilityTimer -= deltaTime;
+            if (this.invincibilityTimer <= 0) this.playerInvincible = false;
+        } else if (this.player) {
             for (let i = this.enemyProjectiles.length - 1; i >= 0; i--) {
                 const projectile = this.enemyProjectiles[i];
                 if (!projectile.active) continue;
                 if (checkCollision(this.player, projectile)) {
                     projectile.active = false;
                     this.playerHealth -= projectile.damage;
+                    this.playerInvincible = true;
+                    this.invincibilityTimer = this.invincibilityDuration;
+                    if (this.playerHealth <= 0) {
+                        this.showMenu(GAME_STATES.GAME_OVER);
+                        if (this.bgMusic && this.soundEnabled) this.bgMusic.pause();
+                        this.saveGame();
+                        return;
+                    }
+                }
+            }
+            for (let i = this.enemies.length - 1; i >= 0; i--) {
+                const enemy = this.enemies[i];
+                if (!enemy.active) continue;
+                if (checkCollision(this.player, enemy)) {
+                    this.playerHealth -= 20;
+                    enemy.active = false;
                     this.playerInvincible = true;
                     this.invincibilityTimer = this.invincibilityDuration;
                     if (this.playerHealth <= 0) {
@@ -988,35 +918,18 @@ export class Game {
                 if (checkCollision(this.player, powerUp)) {
                     powerUp.active = false;
                     this.applyPowerUpEffect(powerUp.type, powerUp.duration);
-                    if (this.soundEnabled && this.powerUpSound) {
-                        this.powerUpSound.currentTime = 0;
-                        this.powerUpSound.play().catch(e => console.error("Error playing power-up sound:", e));
-                    }
+                    if (this.soundEnabled && this.powerUpSound) this.powerUpSound.play().catch(e => console.error(e));
                 }
-            }
-        }
-
-        if (this.playerInvincible) {
-            this.invincibilityTimer -= deltaTime;
-            if (this.invincibilityTimer <= 0) {
-                this.playerInvincible = false;
             }
         }
     }
 
     draw() {
+        if (this.currentState === GAME_STATES.SHOP) return;
+
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         
-        if (this.currentState === GAME_STATES.SHOP || this.currentState === GAME_STATES.LEVEL_MAP || this.currentState === GAME_STATES.DIFFICULTY_SELECTION) {
-            const shopBackground = this.assetLoader.getAsset('upgradeMenuBackground');
-            if (shopBackground) {
-                this.ctx.drawImage(shopBackground, 0, 0, this.canvas.width, this.canvas.height);
-            } else {
-                this.drawStaticBackground();
-            }
-        } else {
-            this.drawStaticBackground();
-        }
+        this.drawStaticBackground();
 
         if (this.currentState === GAME_STATES.PLAYING || this.currentState === GAME_STATES.BOSS_FIGHT) {
             this.drawPlayingScreen();
@@ -1075,10 +988,8 @@ export class Game {
         this.explosions.forEach(e => e.draw(this.ctx));
         this.powerUps.forEach(p => p.draw(this.ctx, this.assetLoader));
         
-        if (!this.isBossPhase) {
-            this.enemies.forEach(e => e.draw(this.ctx, this.assetLoader));
-        }
-
+        this.enemies.forEach(e => e.draw(this.ctx, this.assetLoader));
+        
         if (this.boss && this.boss.active) {
             this.boss.draw(this.ctx, this.assetLoader);
         }
@@ -1170,11 +1081,9 @@ export class Game {
     
         switch (abilityName) {
             case 'Dash':
-                // If ability is already active, just refresh the timer.
                 if (this.activeShipAbilities[abilityName]) {
                     this.activeShipAbilities[abilityName].timer = 15;
                 } else {
-                    // Store the original speed on first activation.
                     this.activeShipAbilities[abilityName] = { 
                         timer: 15, 
                         originalSpeed: this.player.speed 
@@ -1182,13 +1091,12 @@ export class Game {
                 }
                 this.playerInvincible = true;
                 this.invincibilityTimer = 15;
-                // Always calculate the new speed based on the stored original speed.
                 this.player.speed = this.activeShipAbilities[abilityName].originalSpeed * 2;
                 break;
     
             case 'EMP Blast':
                 this.enemies.forEach(enemy => {
-                    if (!enemy.isBoss) { // EMP does not affect bosses
+                    if (!enemy.isBoss) {
                         enemy.isStunned = true;
                     }
                 });
@@ -1301,7 +1209,17 @@ export class Game {
 
     handleKeyDown(e) {
         this.keys[e.key] = true;
-        if (this.currentMenuButtons.length > 0 && (this.currentState !== GAME_STATES.PLAYING && this.currentState !== GAME_STATES.PAUSED && this.currentState !== GAME_STATES.BOSS_FIGHT)) {
+
+        if (this.currentState === GAME_STATES.SHOP) {
+            if (e.key === 'e' || e.key === 'E') {
+                this.shop.interact();
+            } else if (this.shop.currentMenu) {
+                this.shop.handleMenuInput(e.key);
+            }
+            return;
+        }
+
+        if (this.currentMenuButtons.length > 0) {
             if (e.key === 'ArrowUp') {
                 e.preventDefault();
                 this.selectedMenuButtonIndex = (this.selectedMenuButtonIndex - 1 + this.currentMenuButtons.length) % this.currentMenuButtons.length;
@@ -1323,7 +1241,6 @@ export class Game {
                 const currentTime = performance.now() / 1000;
                 if (currentTime - this.lastShotTime >= this.currentShipStats.fireRate) {
                     this.player.fire();
-                    if(this.boss && this.boss.active) this.boss.attemptDodge();
                     if (this.soundEnabled && this.shotSound) {
                         this.shotSound.currentTime = 0;
                         this.shotSound.play().catch(e => console.error("Error playing shot sound:", e));
@@ -1544,7 +1461,9 @@ export class Game {
     }
 
     spawnEnemy() {
-        if (this.enemies.length >= this.maxEnemiesOnScreen || this.isBossPhase) return;
+        // *** BUG FIX: Stop spawning enemies when score is reached ***
+        if (this.score >= this.levelScoreToClear || this.enemies.length >= this.maxEnemiesOnScreen || this.isBossPhase) return;
+        
         const enemyWidth = 80;
         const enemyHeight = 80;
         const enemyX = Math.random() * (this.canvas.width - enemyWidth);
@@ -1558,7 +1477,7 @@ export class Game {
         
         const randomSpriteName = this.currentLevelEnemyTypes[Math.floor(Math.random() * this.currentLevelEnemyTypes.length)];
         const newEnemy = new Enemy(enemyX, enemyY, enemyWidth, enemyHeight, enemySpeed, 'basic', randomSpriteName);
-        newEnemy.health = 3 * this.currentEnemyHealthMultiplier; // Increased HP for normal enemies
+        newEnemy.health = 3 * this.currentEnemyHealthMultiplier;
         newEnemy.maxHealth = 3 * this.currentEnemyHealthMultiplier;
         this.enemies.push(newEnemy);
     }
@@ -1598,34 +1517,47 @@ export class Game {
             case 'heal':
                 this.playerHealth = Math.min(this.playerHealth + 25, this.currentShipStats.health);
                 break;
-            case 'bomb':
+            case 'bomb': {
+                const bombRadius = 250;
+                const playerCenterX = this.player.x + this.player.width / 2;
+                const playerCenterY = this.player.y + this.player.height / 2;
+
+                this.explosions.push(new Explosion(playerCenterX, playerCenterY, this.assetLoader.getAsset('explosionSprite'), 20, bombRadius, 0.5));
+                if (this.soundEnabled && this.explosionSound) {
+                    this.explosionSound.currentTime = 0;
+                    this.explosionSound.play().catch(e => console.error("Error playing explosion sound:", e));
+                }
+                
                 this.enemies.forEach(enemy => {
-                    enemy.active = false;
-                    const difficulty = this.difficultySettings[this.currentDifficulty];
-                    this.score += Math.round(10 * difficulty.scoreRate);
-                    this.money += Math.round(5 * difficulty.moneyRate);
-                    this.experience += Math.round(10 * difficulty.expRate);
-                    this.explosions.push(new Explosion(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, this.assetLoader.getAsset('explosionSprite'), 10, 50, 0.5));
-                    if (this.soundEnabled && this.explosionSound) {
-                        this.explosionSound.currentTime = 0;
-                        this.explosionSound.play().catch(e => console.error("Error playing explosion sound:", e));
+                    if (!enemy.active) return;
+                    const enemyCenterX = enemy.x + enemy.width / 2;
+                    const enemyCenterY = enemy.y + enemy.height / 2;
+                    const distance = Math.sqrt(Math.pow(playerCenterX - enemyCenterX, 2) + Math.pow(playerCenterY - enemyCenterY, 2));
+
+                    if (distance <= bombRadius) {
+                        enemy.active = false;
+                        const difficulty = this.difficultySettings[this.currentDifficulty];
+                        this.score += Math.round(10 * difficulty.scoreRate);
+                        this.money += Math.round(5 * difficulty.moneyRate);
+                        this.experience += Math.round(10 * difficulty.expRate);
                     }
                 });
-                this.enemies = [];
-    
+
                 if (this.boss && this.boss.active) {
-                    this.boss.health -= 200;
-                    this.explosions.push(new Explosion(this.boss.x + this.boss.width / 2, this.boss.y + this.boss.height / 2, this.assetLoader.getAsset('explosionSprite'), 10, 100, 0.5));
-                    if (this.soundEnabled && this.explosionSound) {
-                        this.explosionSound.currentTime = 0;
-                        this.explosionSound.play().catch(e => console.error("Error playing explosion sound:", e));
-                    }
-                    if (this.boss.health <= 0) {
-                        this.boss.active = false;
-                        this.bossDefeated();
+                    const bossCenterX = this.boss.x + this.boss.width / 2;
+                    const bossCenterY = this.boss.y + this.boss.height / 2;
+                    const distance = Math.sqrt(Math.pow(playerCenterX - bossCenterX, 2) + Math.pow(playerCenterY - bossCenterY, 2));
+                    
+                    if (distance <= bombRadius) {
+                        this.boss.health -= 200;
+                        if (this.boss.health <= 0) {
+                            this.boss.active = false;
+                            this.bossDefeated();
+                        }
                     }
                 }
                 break;
+            }
             case 'slowEnemies':
                 if (!this.activePowerUpEffects.slowEnemies) {
                     this.activePowerUpEffects.slowEnemies = { slowFactor: 0.5 };

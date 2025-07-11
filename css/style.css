@@ -36,7 +36,6 @@ body {
     -ms-user-select: none;
 }
 
-/* Game container with cosmic background, similar to the image */
 #gameContainer {
     position: relative;
     width: 100vw;
@@ -45,18 +44,13 @@ body {
     justify-content: center;
     align-items: center;
     overflow: hidden;
-    /* Use a solid color or subtle radial gradient for background */
-    background-color: var(--image-bg-purple); /* Match body background */
-    /* You'd typically add a background image of stars here for the full effect */
-    /* background-image: url('path/to/your/starfield.png'); */
-    /* background-repeat: no-repeat; */
-    /* background-size: cover; */
+    background-color: var(--image-bg-purple);
 }
 
 canvas {
-    border: 4px solid var(--retro-neon-blue); /* Thicker neon blue border */
-    background-color: #000; /* Pure black for deep space behind game */
-    box-shadow: 0 0 25px var(--retro-neon-blue), inset 0 0 10px var(--retro-neon-blue); /* Glowing effect */
+    border: 4px solid var(--retro-neon-blue);
+    background-color: #000;
+    box-shadow: 0 0 25px var(--retro-neon-blue), inset 0 0 10px var(--retro-neon-blue);
     image-rendering: pixelated;
     image-rendering: -moz-crisp-edges;
     image-rendering: -webkit-crisp-edges;
@@ -68,127 +62,126 @@ canvas {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    z-index: 10; /* Above canvas */
-    /* Make UI background more subtle or transparent like the image's menu area */
-    background-color: transparent; /* No opaque background for the menu block */
+    z-index: 10;
+    background-color: transparent;
     padding: 30px 50px;
-    border: none; /* No border for the main UI box */
-    box-shadow: none; /* No shadow for the main UI box */
+    border: none;
+    box-shadow: none;
     text-align: center;
     border-radius: 0;
     color: var(--retro-text-color);
-    text-shadow: none; /* Remove general UI text shadow */
+    text-shadow: none;
 }
 
-/* Adjustments for the main title to mimic the image's style */
 .game-ui h1 {
-    color: var(--image-menu-text-color); /* Golden yellow for title */
-    font-size: 3.5em; /* Make title larger */
-    margin-bottom: 40px; /* More space below title */
-    /* This creates an outlined pixelated look. Experiment with values. */
+    color: var(--image-menu-text-color);
+    font-size: 3.5em;
+    margin-bottom: 40px;
     text-shadow:
         -2px -2px 0 var(--image-title-outline),
          2px -2px 0 var(--image-title-outline),
         -2px  2px 0 var(--image-title-outline),
          2px  2px 0 var(--image-title-outline),
-         4px  4px 0 rgba(0,0,0,0.7); /* Drop shadow */
-    /* Adjust this to hide the h1 text if you only want the image */
-    font-size: 0; /* Hides the text "Chrono-Pixel Clash" if you only want the image */
-    margin-bottom: 0; /* Adjust spacing if needed */
+         4px  4px 0 rgba(0,0,0,0.7);
+    font-size: 0;
+    margin-bottom: 0;
 }
 
-/* Style for the game logo */
 #gameLogo {
-    max-width: 80%; /* Adjust as needed */
+    max-width: 80%;
     height: auto;
-    display: block; /* Ensures it behaves like a block element for centering */
-    margin: 0 auto 20px auto; /* Centers the image and adds space below */
+    display: block;
+    margin: 0 auto 20px auto;
 }
-
 
 .game-ui h2 {
-     color: var(--image-menu-text-color); /* Golden yellow for sub-titles */
+     color: var(--image-menu-text-color);
      text-shadow: 3px 3px #000;
      margin-bottom: 20px;
 }
 
 .game-ui p {
-    color: var(--image-menu-text-color); /* Golden yellow for general text */
+    color: var(--image-menu-text-color);
     text-shadow: 2px 2px #000;
 }
 
-/* Loading Text specific styling */
 #loadingText {
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    z-index: 11; /* Above canvas and menu */
+    z-index: 11;
     font-size: 24px;
-    color: var(--retro-neon-green); /* Neon green for loading */
+    color: var(--retro-neon-green);
     text-shadow: 2px 2px #000;
 }
 
-/* Style for the shop menu to position it over the TV screen */
-#shopMenu {
+/* --- NEW SHOP STYLES --- */
+#shopHangar {
+    width: 100%;
+    height: 100%;
+}
+
+#interactionPrompt {
+    position: absolute;
+    top: 50%; /* Changed from bottom */
+    left: 50%;
+    transform: translate(-50%, -50%); /* Adjusted for vertical centering */
+    background-color: rgba(0, 0, 0, 0.7);
+    padding: 10px 20px;
+    border: 2px solid var(--retro-neon-blue);
+    border-radius: 5px;
+    color: var(--retro-neon-blue);
+    font-size: 1.2em;
+    text-shadow: 1px 1px #000;
+}
+
+.shop-sub-menu {
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    
-    /* Adjusted width and height for better fit */
-    width: 68%;
-    height: 80%;
-    
-    display: grid;
-    grid-template-columns: 1fr 1fr; /* Two equal columns */
-    gap: 15px;
-    
-    padding: 15px;
-    box-sizing: border-box;
-    background-color: transparent; /* No background color */
-    border-radius: 0; /* No border-radius */
-    color: #fff;
-    font-family: 'Press Start 2P', monospace;
-    overflow-y: hidden; /* Ensure no vertical scrolling */
-
-    scrollbar-width: none; /* For Firefox */
+    width: 80%;
+    max-width: 700px;
+    background-color: rgba(10, 0, 30, 0.9);
+    border: 3px solid var(--retro-neon-pink);
+    box-shadow: 0 0 20px var(--retro-neon-pink);
+    padding: 20px;
+    display: none; /* Hidden by default */
 }
 
-#shopMenu::-webkit-scrollbar {
-    display: none; /* For Webkit browsers */
-}
-
-/* Styles for the two main sections within the shop menu */
 .shop-column {
+    max-height: 300px;
+    overflow-y: auto;
+    padding-right: 10px; /* For scrollbar */
+}
+
+.shop-info-column {
+    padding-left: 10px;
+}
+
+#shipyardMenu {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+#shipyardMenu h2, #shipyardMenu p, #shipyardMenu #closeShipyardBtn {
+    grid-column: span 2;
+}
+
+/* --- END NEW SHOP STYLES --- */
+
+#levelMapScreen {
+    background-color: transparent;
+    border: none;
+    box-shadow: none;
+    padding: 20px;
+    width: 70%;
+    height: 80%;
     display: flex;
     flex-direction: column;
-    align-items: center;
-}
-
-/* Ensure headings, horizontal rule, and bottom buttons span both columns */
-#shopMenu h2,
-#shopMenu h3,
-#shopMenu hr,
-#shopMenu #continueShopBtn,
-#shopMenu p {
-    grid-column: span 2;
-    width: 100%;
-    text-align: center;
-}
-
-/* NEW: Styling for the Level Map Screen */
-#levelMapScreen {
-    /* Inherits general .game-ui styles */
-    background-color: transparent; /* No background */
-    border: none; /* No border */
-    box-shadow: none; /* No shadow */
-    padding: 20px; /* Adjust padding as needed */
-    width: 70%; /* Adjust width to fit the screen */
-    height: 80%; /* Adjust height to fit the screen */
-    display: flex; /* Use flexbox for overall layout */
-    flex-direction: column;
-    justify-content: space-between; /* Space out content vertically */
+    justify-content: space-between;
     align-items: center;
 }
 
@@ -200,60 +193,58 @@ canvas {
 
 .level-map-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); /* Responsive grid for level buttons */
-    gap: 15px; /* Space between level buttons */
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 15px;
     width: 100%;
-    max-width: 800px; /* Max width for the grid to prevent stretching too wide */
-    margin: 0 auto; /* Center the grid */
-    overflow-y: auto; /* Allow scrolling if too many levels */
+    max-width: 800px;
+    margin: 0 auto;
+    overflow-y: auto;
     padding: 10px;
     box-sizing: border-box;
-
-    scrollbar-width: thin; /* For Firefox */
-    scrollbar-color: var(--retro-neon-blue) #333; /* For Firefox */
+    scrollbar-width: thin;
+    scrollbar-color: var(--retro-neon-blue) #333;
 }
 
 .level-map-grid::-webkit-scrollbar {
-    width: 8px; /* Width of the scrollbar */
+    width: 8px;
 }
 
 .level-map-grid::-webkit-scrollbar-track {
-    background: #333; /* Color of the track */
+    background: #333;
     border-radius: 10px;
 }
 
 .level-map-grid::-webkit-scrollbar-thumb {
-    background-color: var(--retro-neon-blue); /* Color of the scroll thumb */
+    background-color: var(--retro-neon-blue);
     border-radius: 10px;
-    border: 2px solid #333; /* Padding around thumb */
+    border: 2px solid #333;
 }
 
-
 .level-button {
-    background-color: transparent; /* Transparent button background */
-    color: var(--image-menu-text-color); /* Golden yellow text */
+    background-color: transparent;
+    color: var(--image-menu-text-color);
     padding: 15px 10px;
-    border: 2px solid var(--image-menu-text-color); /* Border color */
+    border: 2px solid var(--image-menu-text-color);
     border-radius: 8px;
     cursor: pointer;
     font-family: 'Press Start 2P', monospace;
-    font-size: 1em; /* Smaller font for level numbers */
+    font-size: 1em;
     text-transform: uppercase;
     transition: background-color 0.1s, color 0.1s, border-color 0.1s;
-    box-shadow: 3px 3px 0 #000; /* Simple shadow for depth */
-    min-width: 100px; /* Ensure a minimum width for buttons */
+    box-shadow: 3px 3px 0 #000;
+    min-width: 100px;
 }
 
 .level-button:hover:not(:disabled) {
-    background-color: rgba(0, 255, 255, 0.2); /* Light cyan transparent hover */
+    background-color: rgba(0, 255, 255, 0.2);
     color: var(--retro-neon-blue);
     border-color: var(--retro-neon-blue);
-    box-shadow: 3px 3px 0 var(--retro-neon-blue); /* Glow shadow on hover */
+    box-shadow: 3px 3px 0 var(--retro-neon-blue);
 }
 
 .level-button.selected {
     border: 2px solid var(--retro-neon-blue);
-    box-shadow: 0 0 10px var(--retro-neon-blue); /* Stronger glow for selected */
+    box-shadow: 0 0 10px var(--retro-neon-blue);
 }
 
 .level-button:disabled {
@@ -265,20 +256,20 @@ canvas {
 }
 
 .level-button.completed {
-    background-color: rgba(0, 255, 0, 0.1); /* Light green tint for completed levels */
+    background-color: rgba(0, 255, 0, 0.1);
     border-color: var(--retro-neon-green);
     color: var(--retro-neon-green);
 }
 
 #levelPlotDisplay {
-    color: var(--retro-text-color); /* White text for plot */
+    color: var(--retro-text-color);
     font-size: 0.9em;
     line-height: 1.5;
     text-shadow: 1px 1px #000;
     margin-top: 20px;
     padding: 10px;
-    border: 1px dashed #555; /* Subtle border for the plot area */
-    background-color: rgba(0, 0, 0, 0.3); /* Slightly darker background */
+    border: 1px dashed #555;
+    background-color: rgba(0, 0, 0, 0.3);
     border-radius: 5px;
 }
 
@@ -286,8 +277,6 @@ canvas {
     margin-top: 20px;
 }
 
-
-/* Ensure menu buttons within the shop are styled appropriately */
 .menu-button {
     background-color: transparent;
     color: var(--image-menu-text-color);
@@ -315,13 +304,11 @@ canvas {
     text-shadow: 2px 2px var(--retro-neon-blue);
 }
 
-/* Style for the selected menu item, add this class via JavaScript */
 .menu-button.selected::before {
     content: '> ';
     color: var(--retro-neon-blue);
 }
 
-/* Styling for the volume slider */
 #volumeSlider {
     -webkit-appearance: none; 
     appearance: none;       
@@ -357,7 +344,6 @@ canvas {
     box-shadow: 0 0 5px var(--retro-neon-blue);
 }
 
-/* Responsive adjustments */
 @media (max-width: 768px) {
     .game-ui {
         padding: 20px 30px;
@@ -375,7 +361,16 @@ canvas {
         padding: 10px;
     }
     .level-map-grid {
-        grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); /* Smaller buttons on mobile */
+        grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
         gap: 10px;
+    }
+    .shop-sub-menu {
+        width: 95%;
+    }
+    #shipyardMenu {
+        grid-template-columns: 1fr;
+    }
+    #shipyardMenu .shop-info-column {
+        grid-row: 2;
     }
 }

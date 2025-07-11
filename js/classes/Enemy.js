@@ -15,261 +15,294 @@ export class Enemy {
 
         this.isBoss = isBoss;
         this.fireRate = fireRate;
+        this.baseFireRate = fireRate; // Store base fire rate for rage mode
         this.projectileSpeed = projectileSpeed;
         this.projectileDamage = projectileDamage;
         this.lastShotTime = 0;
         this.maxHealth = this.health;
 
         if (this.isBoss) {
+            // General Boss Properties
             this.isEntering = true;
-            this.entrySpeed = 200;
-            this.phase = 1;
-            this.hasEnteredPhaseTwo = false;
-            this.isEnraged = false;
-            this.rageDuration = 5;
-            this.rageCooldown = 15;
-            this.lastRageTime = 0;
-            this.rageTimer = 0;
-            
+            this.entrySpeed = 100;
             this.horizontalSpeed = 75;
             this.horizontalDirection = Math.random() < 0.5 ? 1 : -1;
-            this.moveChangeTimer = 0;
-            this.dodgeChance = 0.4;
             
+            // *** FEATURE: Boss Phases ***
+            this.phase = 1;
+            this.hasEnteredPhaseTwo = false;
+
+            // *** FEATURE: Rage Mode ***
+            this.isEnraged = false;
+            this.rageTimer = 0;
+            this.rageDuration = 5; // 5 seconds of rage
+            this.rageCooldown = 15; // 15 seconds cooldown between rages
+            this.rageCooldownTimer = this.rageCooldown;
+
+            // Special Attack Properties
             this.specialAttackType = specialAttackType;
             this.specialAttackCooldown = 10;
-            this.lastSpecialAttackTime = 0;
+            this.specialAttackTimer = this.specialAttackCooldown;
             this.isChargingSpecial = false;
             this.chargeTimer = 0;
 
-            // State for managing the special attack itself
-            this.isUnleashingSpecial = false;
-            this.specialAttackState = {
-                barrageCount: 0,
-                barrageTimer: 0,
-            };
+            // Dodge Properties
+            this.dodgeSpeed = 300;
+            this.isDodging = false;
+            this.dodgeDuration = 0.3;
+            this.dodgeTimer = 0;
+            this.dodgeCooldown = 2;
+            this.dodgeCooldownTimer = 0;
         }
     }
 
-    update(deltaTime, canvas, player = null) {
-        if (!this.active || (this.isStunned && !this.isBoss)) return { newProjectiles: [], newEnemies: [] };
-
-        const projectiles = [];
-        const enemies = [];
-        const currentTime = performance.now() / 1000;
+    update(deltaTime, canvas, player, playerProjectiles, game) {
+        if (this.isStunned) {
+            return { newProjectiles: [], newEnemies: [] };
+        }
 
         if (this.isBoss) {
-            // Phase transition
-            if (this.health <= this.maxHealth / 2 && !this.hasEnteredPhaseTwo) {
+            // *** FEATURE: Phase Transition Logic ***
+            if (!this.hasEnteredPhaseTwo && this.health <= this.maxHealth / 2) {
                 this.hasEnteredPhaseTwo = true;
                 this.phase = 2;
-                this.fireRate *= 0.75;
-                this.speed *= 1.2;
+                this.horizontalSpeed *= 1.5; // Increase speed in phase 2
+                this.baseFireRate *= 0.75; // Increase base fire rate in phase 2
+                this.fireRate = this.baseFireRate;
             }
 
-            // Rage ability
-            if (this.phase === 2 && !this.isStunned) {
-                if (!this.isEnraged && currentTime - this.lastRageTime > this.rageCooldown) {
+            // *** FEATURE: Rage Mode Logic ***
+            if (this.isEnraged) {
+                this.rageTimer -= deltaTime;
+                if (this.rageTimer <= 0) {
+                    this.isEnraged = false;
+                    this.fireRate = this.baseFireRate; // Revert to base fire rate
+                }
+            } else {
+                this.rageCooldownTimer -= deltaTime;
+                if (this.rageCooldownTimer <= 0) {
                     this.isEnraged = true;
                     this.rageTimer = this.rageDuration;
-                    this.lastRageTime = currentTime;
-                    this.speed *= 1.5;
-                    this.fireRate *= 0.5;
-                }
-                if (this.isEnraged) {
-                    this.rageTimer -= deltaTime;
-                    if (this.rageTimer <= 0) {
-                        this.isEnraged = false;
-                        this.speed /= 1.5;
-                        this.fireRate /= 0.5;
-                    }
+                    this.fireRate = this.baseFireRate * 0.33; // Significantly increase fire rate
+                    this.rageCooldownTimer = this.rageCooldown;
                 }
             }
 
-            // Movement
-            if (!this.isStunned) {
-                if (this.isEntering) {
-                    this.y += this.entrySpeed * deltaTime;
-                    if (this.y >= 50) this.isEntering = false;
-                } else {
-                    this.y += this.speed * deltaTime;
-                    this.x += this.horizontalSpeed * this.horizontalDirection * deltaTime;
-                    this.moveChangeTimer -= deltaTime;
-                    if (this.moveChangeTimer <= 0) {
-                        this.horizontalDirection *= -1;
-                        this.moveChangeTimer = Math.random() * 2 + 1;
-                    }
+            this.handleDodging(deltaTime, playerProjectiles);
+
+            if (this.isEntering) {
+                this.y += this.entrySpeed * deltaTime;
+                if (this.y >= 50) {
+                    this.y = 50;
+                    this.isEntering = false;
                 }
-            }
-
-            // Boundary checks
-            if (this.x < 0) {
-                this.x = 0;
-                this.horizontalDirection = 1;
-            }
-            if (this.x + this.width > canvas.width) {
-                this.x = canvas.width - this.width;
-                this.horizontalDirection = -1;
-            }
-
-            // Regular attack
-            if (player && currentTime - this.lastShotTime >= this.fireRate && !this.isChargingSpecial && !this.isUnleashingSpecial && !this.isStunned) {
-                this.lastShotTime = currentTime;
-                projectiles.push(...this.fireNormalShot(player));
+            } else if (this.isDodging) {
+                this.x += this.horizontalDirection * this.dodgeSpeed * deltaTime;
+            } else if (!this.isChargingSpecial) {
+                this.x += this.horizontalDirection * this.horizontalSpeed * deltaTime;
+                if (this.x <= 0 || this.x + this.width >= canvas.width) {
+                    this.horizontalDirection *= -1;
+                }
             }
             
-            // Special attack logic
-            if (player && currentTime - this.lastSpecialAttackTime >= this.specialAttackCooldown && !this.isChargingSpecial && !this.isUnleashingSpecial && !this.isStunned) {
-                this.isChargingSpecial = true;
-                this.chargeTimer = 1.5;
-                this.lastSpecialAttackTime = currentTime;
-            }
+            this.x = Math.max(0, Math.min(this.x, canvas.width - this.width));
+
+            const currentTime = performance.now() / 1000;
+            let newProjectiles = [];
+            let newEnemies = [];
 
             if (this.isChargingSpecial) {
                 this.chargeTimer -= deltaTime;
                 if (this.chargeTimer <= 0) {
+                    // *** FIX: Pass the game's projectile array to the attack function ***
+                    const attackResult = this.useSpecialAttack(player, game.enemyProjectiles);
+                    newEnemies = attackResult.newEnemies;
                     this.isChargingSpecial = false;
-                    this.isUnleashingSpecial = true;
-                    this.specialAttackState.barrageCount = 0;
-                    this.specialAttackState.barrageTimer = 0;
+                }
+            } else {
+                if (currentTime - this.lastShotTime >= this.fireRate) {
+                    newProjectiles.push(...this.fire(player));
+                    this.lastShotTime = currentTime;
+                }
+
+                this.specialAttackTimer -= deltaTime;
+                if (this.specialAttackTimer <= 0) {
+                    this.beginSpecialAttack();
                 }
             }
+            return { newProjectiles, newEnemies };
 
-            if (this.isUnleashingSpecial) {
-                const specialAttackResult = this.unleashSpecialAttack(deltaTime, player);
-                projectiles.push(...specialAttackResult.newProjectiles);
-                enemies.push(...specialAttackResult.newEnemies);
+        } else {
+            this.y += this.speed * deltaTime;
+            if (this.y > canvas.height) {
+                this.active = false;
             }
-
-        } else { // Regular enemy movement
-            if (!this.isStunned) {
-                this.y += this.speed * deltaTime;
-            }
-            if (this.y > canvas.height) this.active = false;
         }
-
-        return { newProjectiles: projectiles, newEnemies: enemies };
+        return { newProjectiles: [], newEnemies: [] };
     }
     
-    fireNormalShot(player) {
-        const projectiles = [];
-        const targetX = player.x + player.width / 2;
-        const targetY = player.y + player.height / 2;
-        const dx = targetX - (this.x + this.width / 2);
-        const dy = targetY - (this.y + this.height);
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        const normalizedDx = dx / distance;
-        const normalizedDy = dy / distance;
-
-        const createProjectile = (velX, velY) => new Projectile(this.x + this.width / 2 - 5, this.y + this.height, 10, 20, this.projectileSpeed, 'down', 'red', this.projectileDamage, 'boss', { x: velX * this.projectileSpeed, y: velY * this.projectileSpeed });
-
-        projectiles.push(createProjectile(normalizedDx, normalizedDy));
-
-        if (this.phase === 2) {
-            const angle = Math.atan2(normalizedDy, normalizedDx);
-            const spreadAngle = Math.PI / 12;
-            projectiles.push(createProjectile(Math.cos(angle - spreadAngle), Math.sin(angle - spreadAngle)));
-            projectiles.push(createProjectile(Math.cos(angle + spreadAngle), Math.sin(angle + spreadAngle)));
+    handleDodging(deltaTime, playerProjectiles) {
+        this.dodgeCooldownTimer -= deltaTime;
+        if (this.isDodging) {
+            this.dodgeTimer -= deltaTime;
+            if (this.dodgeTimer <= 0) {
+                this.isDodging = false;
+            }
+            return;
         }
+
+        if (this.dodgeCooldownTimer > 0) {
+            return;
+        }
+
+        const dangerZone = {
+            x: this.x - this.width,
+            y: this.y,
+            width: this.width * 3,
+            height: this.height + 200
+        };
+
+        for (const p of playerProjectiles) {
+            if (p.y > this.y + this.height) continue;
+
+            const projectileHitbox = { x: p.x, y: p.y, width: p.width, height: p.height };
+            
+            if (projectileHitbox.x < dangerZone.x + dangerZone.width &&
+                projectileHitbox.x + projectileHitbox.width > dangerZone.x &&
+                projectileHitbox.y < dangerZone.y + dangerZone.height &&
+                projectileHitbox.y + projectileHitbox.height > dangerZone.y)
+            {
+                this.isDodging = true;
+                this.dodgeTimer = this.dodgeDuration;
+                this.dodgeCooldownTimer = this.dodgeCooldown;
+                this.horizontalDirection = (this.x > p.x) ? 1 : -1;
+                break; 
+            }
+        }
+    }
+
+    fire(player) {
+        const projectiles = [];
+        const projectileX = this.x + this.width / 2;
+        const projectileY = this.y + this.height;
+
+        projectiles.push(new Projectile(
+            projectileX, projectileY,
+            10, 20,
+            this.projectileSpeed,
+            'down', 'pink', this.projectileDamage, 'boss'
+        ));
         return projectiles;
     }
 
-    unleashSpecialAttack(deltaTime, player) {
-        const newProjectiles = [];
-        const newEnemies = [];
+    beginSpecialAttack() {
+        this.isChargingSpecial = true;
+        this.specialAttackTimer = this.specialAttackCooldown;
 
         switch (this.specialAttackType) {
-            case 'laserBarrage':
-                this.specialAttackState.barrageTimer -= deltaTime;
-                if (this.specialAttackState.barrageTimer <= 0 && this.specialAttackState.barrageCount < 10) {
-                    const velocity = { x: 0, y: this.projectileSpeed * 1.5 };
-                    const projectile = new Projectile(
-                        this.x + this.width / 2 - 5, 
-                        this.y + this.height, 
-                        8, 
-                        25, 
-                        this.projectileSpeed * 1.5, 
-                        'down', 
-                        'cyan', 
-                        this.projectileDamage * 0.8, 
-                        'boss',
-                        velocity
-                    );
-                    newProjectiles.push(projectile);
-                    this.specialAttackState.barrageCount++;
-                    this.specialAttackState.barrageTimer = 0.1; // Fire every 0.1 seconds
-                }
-                if (this.specialAttackState.barrageCount >= 10) {
-                    this.isUnleashingSpecial = false;
-                }
-                break;
-            case 'summonMinions':
-                for (let i = 0; i < 3; i++) {
-                    const minionX = this.x + (i * (this.width / 3));
-                    const minion = new Enemy(minionX, this.y + this.height, 40, 40, 100, 'basic', 'monster1', false);
-                    minion.health = 3; // Minions have the same base health as normal enemies
-                    minion.maxHealth = 3;
-                    newEnemies.push(minion);
-                }
-                this.isUnleashingSpecial = false; // This is a one-time effect
-                break;
-            case 'chargeBeam':
-                {
-                    const velocity = { x: 0, y: this.projectileSpeed * 0.5 };
-                    newProjectiles.push(new Projectile(
-                        this.x + this.width / 2 - 25, 
-                        this.y + this.height, 
-                        50, 
-                        30, 
-                        this.projectileSpeed * 0.5, 
-                        'down', 
-                        'yellow', 
-                        this.projectileDamage * 3, 
-                        'boss',
-                        velocity
-                    ));
-                }
-                this.isUnleashingSpecial = false; // This is a one-time effect
-                break;
+            case 'chargeBeam': this.chargeTimer = 1.5; break;
+            case 'laserBarrage': this.chargeTimer = 1; break;
+            case 'summonMinions': this.chargeTimer = 0.5; break;
+            case 'scatterShot': this.chargeTimer = 1.2; break;
         }
-        return { newProjectiles, newEnemies };
     }
 
-    attemptDodge() {
-        if (Math.random() < this.dodgeChance) {
-            this.horizontalDirection *= -1;
-            this.moveChangeTimer = 0.5;
+    useSpecialAttack(player, enemyProjectiles) {
+        let newEnemies = [];
+
+        switch (this.specialAttackType) {
+            case 'chargeBeam': {
+                const beam = new Projectile(0, this.y + this.height, 80, 2000, 0, 'down', 'rgba(255, 0, 255, 0.7)', this.projectileDamage * 5, 'boss', {x: 0, y: this.projectileSpeed * 3});
+                beam.width = this.width;
+                beam.x = this.x;
+                enemyProjectiles.push(beam);
+                break;
+            }
+            case 'laserBarrage': {
+                // *** FIX: Use a loop with setTimeout that pushes directly to the game's projectile array ***
+                for (let i = 0; i < 5; i++) {
+                    setTimeout(() => {
+                        const angle = Math.atan2(player.y - (this.y + this.height), player.x - (this.x + this.width / 2));
+                        const velocity = {
+                            x: Math.cos(angle) * this.projectileSpeed * 1.5,
+                            y: Math.sin(angle) * this.projectileSpeed * 1.5
+                        };
+                        enemyProjectiles.push(new Projectile(
+                            this.x + this.width / 2, this.y + this.height,
+                            8, 16, 0, 'down', 'cyan', this.projectileDamage, 'boss', velocity
+                        ));
+                    }, i * 100); // Stagger the shots by 100ms
+                }
+                break;
+            }
+            case 'summonMinions': {
+                for (let i = 0; i < 3; i++) {
+                    const enemyX = this.x + (this.width / 4) * (i + 1) - 40;
+                    const newEnemy = new Enemy(enemyX, this.y + this.height, 60, 60, 120, 'basic', 'monster1');
+                    newEnemy.health = 2;
+                    newEnemies.push(newEnemy);
+                }
+                break;
+            }
+            case 'scatterShot': {
+                const numProjectiles = 8;
+                const angleSpread = Math.PI / 2;
+                const startAngle = Math.PI / 2 - angleSpread / 2;
+
+                for (let i = 0; i < numProjectiles; i++) {
+                    const angle = startAngle + (angleSpread / (numProjectiles - 1)) * i;
+                    const velocity = {
+                        x: Math.cos(angle) * this.projectileSpeed,
+                        y: Math.sin(angle) * this.projectileSpeed
+                    };
+                    enemyProjectiles.push(new Projectile(
+                        this.x + this.width / 2, this.y + this.height,
+                        12, 12, 0, 'down', 'lime', this.projectileDamage * 0.8, 'boss', velocity
+                    ));
+                }
+                break;
+            }
         }
+        return { newProjectiles: [], newEnemies };
     }
 
     draw(ctx, assetLoader) {
         const sprite = assetLoader.getAsset(this.spriteName);
+        ctx.save();
+        if (this.isChargingSpecial) {
+            const glow = Math.abs(Math.sin(performance.now() / 150));
+            ctx.filter = `brightness(1.5) drop-shadow(0 0 ${15 * glow}px yellow)`;
+        } else if (this.isEnraged) {
+            // *** FEATURE: Visual indicator for rage mode ***
+            const glow = Math.abs(Math.sin(performance.now() / 100));
+            ctx.filter = `hue-rotate(330deg) brightness(1.2) drop-shadow(0 0 ${10 * glow}px red)`;
+        } else if (this.isDodging) {
+            ctx.filter = 'brightness(0.8) saturate(0)';
+        } else if (this.phase === 2) {
+            // *** FEATURE: Visual indicator for phase 2 ***
+            ctx.filter = 'saturate(2) brightness(1.1)';
+        }
+        
         if (sprite) {
-            ctx.save();
-            if (this.isChargingSpecial) {
-                ctx.filter = 'brightness(2.5) drop-shadow(0 0 10px yellow)';
-            } else if (this.isEnraged) {
-                ctx.filter = 'hue-rotate(-45deg) brightness(1.5)';
-            } else if (this.phase === 2) {
-                ctx.filter = 'saturate(2)';
-            }
             ctx.drawImage(sprite, this.x, this.y, this.width, this.height);
-            ctx.restore();
         } else {
             ctx.fillStyle = this.isBoss ? 'purple' : 'red';
             ctx.fillRect(this.x, this.y, this.width, this.height);
         }
+        ctx.restore();
 
-        const healthBarWidth = this.width * 0.8;
-        const healthBarHeight = 5;
-        const healthBarX = this.x + (this.width - healthBarWidth) / 2;
-        const healthBarY = this.y - healthBarHeight - 5;
+        if (this.health < this.maxHealth) {
+            const healthBarWidth = this.width * 0.8;
+            const healthBarHeight = 8;
+            const healthBarX = this.x + (this.width - healthBarWidth) / 2;
+            const healthBarY = this.y - healthBarHeight - 5;
 
-        ctx.fillStyle = 'darkred';
-        ctx.fillRect(healthBarX, healthBarY, healthBarWidth, healthBarHeight);
+            ctx.fillStyle = 'darkred';
+            ctx.fillRect(healthBarX, healthBarY, healthBarWidth, healthBarHeight);
 
-        const currentHealthWidth = (this.health / this.maxHealth) * healthBarWidth;
-        ctx.fillStyle = 'lime';
-        ctx.fillRect(healthBarX, healthBarY, currentHealthWidth, healthBarHeight);
+            const currentHealthWidth = (this.health / this.maxHealth) * healthBarWidth;
+            ctx.fillStyle = 'red';
+            ctx.fillRect(healthBarX, healthBarY, currentHealthWidth, healthBarHeight);
+        }
     }
 }

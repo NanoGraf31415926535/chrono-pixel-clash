@@ -5,33 +5,36 @@ export class Projectile {
         this.width = width;
         this.height = height;
         this.speed = speed;
-        this.direction = direction;
+        this.direction = direction; // 'up' or 'down' for player, unused for boss
         this.color = color;
         this.damage = damage;
         this.active = true;
-        this.type = type;
-        this.velocity = velocity;
+        this.type = type; // 'player' or 'boss'
+        
+        // If a velocity object is provided, use it. Otherwise, calculate based on direction.
+        if (velocity.x !== 0 || velocity.y !== 0) {
+            this.velocity = velocity;
+        } else {
+            this.velocity = {
+                x: 0,
+                y: direction === 'up' ? -this.speed : this.speed
+            };
+        }
     }
 
     update(deltaTime, canvas) {
-        if (this.type === 'player') {
-            if (this.direction === 'up') {
-                this.y -= this.speed * deltaTime;
-            } else if (this.direction === 'down') {
-                this.y += this.speed * deltaTime;
-            }
-        } else if (this.type === 'boss') {
-            this.x += this.velocity.x * deltaTime;
-            this.y += this.velocity.y * deltaTime;
-        }
+        // Universal movement based on velocity
+        this.x += this.velocity.x * deltaTime;
+        this.y += this.velocity.y * deltaTime;
 
-
+        // Deactivate projectile if it goes off-screen
         if (this.y + this.height < 0 || this.y > canvas.height || this.x + this.width < 0 || this.x > canvas.width) {
             this.active = false;
         }
     }
 
     draw(ctx) {
+        if (!this.active) return;
         ctx.fillStyle = this.color;
         ctx.fillRect(this.x, this.y, this.width, this.height);
     }

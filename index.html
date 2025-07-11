@@ -24,7 +24,6 @@
             <button id="creditsBtn" class="menu-button">Credits</button>
         </div>
 
-        <!-- Moved difficultySelection outside mainMenu -->
         <div id="difficultySelection" class="game-ui" style="display: none;">
             <h2>SELECT DIFFICULTY</h2>
             <button id="easyBtn" class="menu-button selected">Easy</button>
@@ -51,32 +50,36 @@
             <button id="backToMainFromCreditsBtn" class="menu-button">BACK TO MAIN MENU</button>
         </div>
 
-        <div id="shopMenu" class="game-ui" style="display: none;">
-            <h2 style="grid-column: span 2;">SHOP</h2>
-            <div style="grid-column: span 2; text-align: center;">
-                <p>Money: <span id="currentMoneyDisplay">0</span></p>
-                <p>Experience: <span id="currentExperienceDisplay">0</span></p>
-            </div>
+        <!-- NEW: Shop Hangar UI -->
+        <div id="shopHangar" class="game-ui" style="display: none;">
+            <div id="interactionPrompt"></div>
             
-            <div id="shipPurchaseColumn" class="shop-column">
-                <h3>Available Ships</h3>
-                <!-- Ship buttons will be dynamically added here -->
+            <div id="shipyardMenu" class="shop-sub-menu">
+                <h2>SHIPYARD</h2>
+                <p>Money: <span id="currentMoneyDisplayShipyard">0</span> | Experience: <span id="currentExperienceDisplayShipyard">0</span></p>
+                <div id="shipPurchaseColumn" class="shop-column">
+                    <!-- Ship buttons will be dynamically added here -->
+                </div>
+                <div class="shop-info-column">
+                    <p>Current Ship: <span id="currentShipTypeDisplay">Ship 1</span></p>
+                    <p>Ability: <span id="currentShipAbilityName">None</span></p>
+                    <p>Description: <span id="currentShipAbilityDescription">No special ability.</span></p>
+                </div>
+                <button id="closeShipyardBtn" class="menu-button">Close</button>
             </div>
-            
-            <div id="shipUpgradeColumn" class="shop-column">
-                <h3>Ship Upgrades (Money)</h3>
-                <p>Current Ship: <span id="currentShipTypeDisplay">Ship 1</span></p>
-                <p>Ability: <span id="currentShipAbilityName">None</span></p>
-                <p>Description: <span id="currentShipAbilityDescription">No special ability.</span></p>
-                <!-- Upgrade buttons will be dynamically added here -->
+
+            <div id="upgradeMenu" class="shop-sub-menu">
+                <h2>UPGRADE TERMINAL</h2>
+                <p>Money: <span id="currentMoneyDisplayUpgrade">0</span></p>
+                <h3>Upgrades for <span id="upgradeShipName"></span></h3>
+                <div id="shipUpgradeColumn" class="shop-column">
+                    <!-- Upgrade buttons will be dynamically added here -->
+                </div>
+                <button id="closeUpgradeBtn" class="menu-button">Close</button>
             </div>
-            
-            <hr style="grid-column: span 2;">
-            <button id="continueShopBtn" class="menu-button" style="grid-column: span 2;">Continue</button>
-            <p style="font-size: 0.8em; color: gray; margin-top: 10px; grid-column: span 2;">(Game saved automatically)</p>
         </div>
 
-        <!-- NEW: Level Map Screen -->
+
         <div id="levelMapScreen" class="game-ui" style="display: none;">
             <h2>SELECT LEVEL</h2>
             <div id="levelButtonsContainer" class="level-map-grid">
