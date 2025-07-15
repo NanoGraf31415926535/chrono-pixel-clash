@@ -567,3 +567,52 @@ canvas {
         padding: 12px 15px;
     }
 }
+
+/* Commander Tutorial Popup Styles */
+.commander-popup {
+    position: absolute;
+    left: 50%;
+    bottom: 40px;
+    transform: translateX(-50%);
+    min-width: 350px;
+    max-width: 700px;
+    background: linear-gradient(145deg, rgba(20, 10, 50, 0.98), rgba(40, 20, 80, 0.98));
+    border: 3px solid var(--retro-neon-blue);
+    box-shadow: 0 0 25px var(--retro-neon-blue), 4px 4px 0 rgba(0,0,0,0.8);
+    border-radius: 0;
+    z-index: 100;
+    padding: 28px 32px 18px 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-family: 'Press Start 2P', monospace;
+}
+
+.commander-message {
+    color: var(--retro-text-color);
+    font-size: 1.1em;
+    text-shadow: 2px 2px #000;
+    margin-bottom: 18px;
+    min-height: 48px;
+    text-align: left;
+    width: 100%;
+    letter-spacing: 0.5px;
+    word-break: break-word;
+}
+
+.commander-cursor {
+    display: inline-block;
+    width: 1ch;
+    animation: commander-blink 1s steps(1) infinite;
+}
+
+@keyframes commander-blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+}
+
+#commanderNextBtn {
+    margin-top: 8px;
+    align-self: flex-end;
+    min-width: 90px;
+}

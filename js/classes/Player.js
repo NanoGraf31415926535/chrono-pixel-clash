@@ -57,6 +57,21 @@ export class Player {
             ctx.fillStyle = this.color;
             ctx.fillRect(this.x, this.y, this.width, this.height);
         }
+
+        // Draw Health Bar
+        const healthBarWidth = this.width * 0.8;
+        const healthBarHeight = 8;
+        const healthBarX = this.x + (this.width - healthBarWidth) / 2;
+        const healthBarY = this.y - healthBarHeight - 5;
+        const currentHealth = Math.max(0, this.game.playerHealth);
+        const maxHealth = this.game.currentShipStats.health;
+
+        ctx.fillStyle = 'red';
+        ctx.fillRect(healthBarX, healthBarY, healthBarWidth, healthBarHeight);
+
+        const currentHealthWidth = (currentHealth / maxHealth) * healthBarWidth;
+        ctx.fillStyle = 'green';
+        ctx.fillRect(healthBarX, healthBarY, currentHealthWidth, healthBarHeight);
     }
 
     fire() {

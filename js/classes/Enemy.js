@@ -53,6 +53,13 @@ export class Enemy {
             this.dodgeTimer = 0;
             this.dodgeCooldown = 2;
             this.dodgeCooldownTimer = 0;
+
+            // Laser Barrage Properties
+            this.isBarraging = false;
+            this.barrageCount = 0;
+            this.barrageTimer = 0;
+            this.barrageShotDelay = 0.1; // 100ms between shots
+            this.barrageShots = 5;
         }
     }
 
@@ -114,10 +121,27 @@ export class Enemy {
             if (this.isChargingSpecial) {
                 this.chargeTimer -= deltaTime;
                 if (this.chargeTimer <= 0) {
-                    // *** FIX: Pass the game's projectile array to the attack function ***
                     const attackResult = this.useSpecialAttack(player, game.enemyProjectiles);
                     newEnemies = attackResult.newEnemies;
                     this.isChargingSpecial = false;
+                }
+            } else if (this.isBarraging) {
+                this.barrageTimer += deltaTime;
+                if (this.barrageTimer >= this.barrageShotDelay && this.barrageCount < this.barrageShots) {
+                    const angle = Math.atan2(player.y - (this.y + this.height), player.x - (this.x + this.width / 2));
+                    const velocity = {
+                        x: Math.cos(angle) * this.projectileSpeed * 1.5,
+                        y: Math.sin(angle) * this.projectileSpeed * 1.5
+                    };
+                    newProjectiles.push(new Projectile(
+                        this.x + this.width / 2, this.y + this.height,
+                        8, 16, 0, 'down', 'cyan', this.projectileDamage, 'boss', velocity
+                    ));
+                    this.barrageCount++;
+                    this.barrageTimer = 0;
+                }
+                if (this.barrageCount >= this.barrageShots) {
+                    this.isBarraging = false;
                 }
             } else {
                 if (currentTime - this.lastShotTime >= this.fireRate) {
@@ -212,27 +236,23 @@ export class Enemy {
 
         switch (this.specialAttackType) {
             case 'chargeBeam': {
-                const beam = new Projectile(0, this.y + this.height, 80, 2000, 0, 'down', 'rgba(255, 0, 255, 0.7)', this.projectileDamage * 5, 'boss', {x: 0, y: this.projectileSpeed * 3});
-                beam.width = this.width;
-                beam.x = this.x;
+                const beam = new Projectile(
+                    this.x, this.y + this.height,
+                    this.width, 2000, // width and height
+                    0, 'down', // speed and direction
+                    'rgba(255, 0, 255, 0.7)', // color
+                    this.projectileDamage * 5, // damage
+                    'boss', // type
+                    { x: 0, y: 0 }, // velocity
+                    1.0 // duration
+                );
                 enemyProjectiles.push(beam);
                 break;
             }
             case 'laserBarrage': {
-                // *** FIX: Use a loop with setTimeout that pushes directly to the game's projectile array ***
-                for (let i = 0; i < 5; i++) {
-                    setTimeout(() => {
-                        const angle = Math.atan2(player.y - (this.y + this.height), player.x - (this.x + this.width / 2));
-                        const velocity = {
-                            x: Math.cos(angle) * this.projectileSpeed * 1.5,
-                            y: Math.sin(angle) * this.projectileSpeed * 1.5
-                        };
-                        enemyProjectiles.push(new Projectile(
-                            this.x + this.width / 2, this.y + this.height,
-                            8, 16, 0, 'down', 'cyan', this.projectileDamage, 'boss', velocity
-                        ));
-                    }, i * 100); // Stagger the shots by 100ms
-                }
+                this.isBarraging = true;
+                this.barrageCount = 0;
+                this.barrageTimer = 0;
                 break;
             }
             case 'summonMinions': {

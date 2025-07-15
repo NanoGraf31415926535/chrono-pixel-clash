@@ -6,7 +6,7 @@ import { Projectile } from './classes/Projectile.js';
 import { Enemy } from './classes/Enemy.js';
 import { PowerUp } from './classes/PowerUp.js';
 import { Explosion } from './classes/Explosion.js';
-import { Shop } from './classes/Shop.js'; // Import the new Shop class
+import { Shop } from './classes/Shop.js';
 
 export class Game {
     constructor() {
@@ -60,7 +60,7 @@ export class Game {
         this.invincibilityTimer = 0;
 
         this.base = {
-            x: 0, y: 0, width: 0, height: 0,
+            x: 0, y: 0, width: 0, visualWidth: 0, height: 0,
             health: 100, maxHealth: 100
         };
 
@@ -254,6 +254,26 @@ export class Game {
         this.currentMenuButtons = [];
         this.selectedMenuButtonIndex = 0;
 
+        this.commanderPopup = document.getElementById('commanderPopup');
+        this.commanderText = document.getElementById('commanderText');
+        this.commanderCursor = document.querySelector('.commander-cursor');
+        this.commanderNextBtn = document.getElementById('commanderNextBtn');
+        this.tutorialActive = false;
+        this.tutorialMessages = [
+            "Welcome, pilot! I'm Commander Nova. Let's get you ready for battle!",
+            "Use the arrow keys or WASD to move your ship.",
+            "Press SPACE to fire your weapon.",
+            "Press Q to activate your ship's special ability (if available).",
+            "Defend the base at the bottom of the screen. If its health drops to zero, it's game over!",
+            "Collect power-ups for temporary boosts.",
+            "Earn money and experience to upgrade and buy new ships in the shop after each level.",
+            "Good luck, pilot! Earth is counting on you!"
+        ];
+        this.tutorialIndex = 0;
+        this.typingInterval = null;
+        this.currentTypedText = '';
+        this.commanderNextBtn.addEventListener('click', () => this.advanceTutorial());
+
         this.init();
     }
 
@@ -408,11 +428,16 @@ export class Game {
         this.initializeLevel();
         this.initializeBase();
         this.initializePlayer();
-        this.showMenu(GAME_STATES.PLAYING);
         this.isBossPhase = false; 
         this.boss = null;
-        if (this.soundEnabled && this.bgMusic && this.bgMusic.paused) {
-            this.bgMusic.play().catch(e => console.error("Error playing music:", e));
+        // Show tutorial only for first level and only if not completed before
+        if (this.currentLevel === 1 && !localStorage.getItem('tutorialCompleted')) {
+            this.showTutorial();
+        } else {
+            this.showMenu(GAME_STATES.PLAYING);
+            if (this.soundEnabled && this.bgMusic && this.bgMusic.paused) {
+                this.bgMusic.play().catch(e => console.error("Error playing music:", e));
+            }
         }
     }
 
@@ -459,7 +484,8 @@ export class Game {
                 this.money = gameState.money || 0;
                 this.experience = gameState.experience || 0;
                 this.playerHealth = gameState.playerHealth || 100;
-                this.base.health = gameState.base.health || this.base.maxHealth;
+                // *** FIX: Correctly load baseHealth. It was trying to read gameState.base.health which doesn't exist.
+                this.base.health = gameState.baseHealth || this.base.maxHealth;
                 this.currentLevel = gameState.currentLevel || 1;
                 this.completedLevels = gameState.completedLevels || [];
                 this.currentDifficulty = gameState.currentDifficulty || 'normal';
@@ -484,6 +510,7 @@ export class Game {
 
                 this.isBossPhase = gameState.isBossPhase || false;
                 if (this.isBossPhase && gameState.bossHealth !== null) {
+                    // Logic to respawn boss with saved health can be added here if needed
                 }
 
                 return true;
@@ -659,6 +686,8 @@ export class Game {
     }
 
     loadShipUpgrades(shipType) {
+        // NOTE: This currently resets upgrades when switching ships.
+        // For persistent upgrades per ship, this would need to be saved in the game state.
         return { damage: 0, fireRate: 0, health: 0, speed: 0 };
     }
 
@@ -954,11 +983,13 @@ export class Game {
 
     drawBase() {
         const baseSprite = this.assetLoader.getAsset('baseSprite');
-        if (baseSprite) { 
-            this.ctx.drawImage(baseSprite, this.base.x, this.base.y, this.base.width, this.base.height);
+        const visualX = (this.canvas.width - this.base.visualWidth) / 2;
+
+        if (baseSprite) {
+            this.ctx.drawImage(baseSprite, visualX, this.base.y, this.base.visualWidth, this.base.height);
         } else {
             this.ctx.fillStyle = '#444444';
-            this.ctx.fillRect(this.base.x, this.base.y, this.base.width, this.base.height);
+            this.ctx.fillRect(visualX, this.base.y, this.base.visualWidth, this.base.height);
         }
 
         const healthBarWidth = this.base.width * 0.8;
@@ -1081,33 +1112,39 @@ export class Game {
     
         switch (abilityName) {
             case 'Dash':
+                // *** FIX: Corrected ability timer to match description (1.5s)
+                const dashDuration = 1.5;
                 if (this.activeShipAbilities[abilityName]) {
-                    this.activeShipAbilities[abilityName].timer = 15;
+                    this.activeShipAbilities[abilityName].timer = dashDuration;
                 } else {
                     this.activeShipAbilities[abilityName] = { 
-                        timer: 15, 
+                        timer: dashDuration, 
                         originalSpeed: this.player.speed 
                     };
                 }
                 this.playerInvincible = true;
-                this.invincibilityTimer = 15;
+                this.invincibilityTimer = dashDuration;
                 this.player.speed = this.activeShipAbilities[abilityName].originalSpeed * 2;
                 break;
     
             case 'EMP Blast':
+                 // *** FIX: Corrected ability timer to match description (2s)
+                const empDuration = 2;
                 this.enemies.forEach(enemy => {
                     if (!enemy.isBoss) {
                         enemy.isStunned = true;
                     }
                 });
-                this.activeShipAbilities[abilityName] = { timer: 15 };
+                this.activeShipAbilities[abilityName] = { timer: empDuration };
                 break;
     
             case 'Drone Companion':
+                // *** FIX: Corrected ability timer to match description (5s)
+                const droneDuration = 5;
                 if (!this.activeShipAbilities[abilityName]) {
                     this.activeShipAbilities[abilityName] = { originalNumProjectiles: this.currentShipStats.numProjectiles };
                 }
-                this.activeShipAbilities[abilityName].timer = 15;
+                this.activeShipAbilities[abilityName].timer = droneDuration;
                 this.currentShipStats.numProjectiles = this.activeShipAbilities[abilityName].originalNumProjectiles + 2;
                 break;
     
@@ -1116,10 +1153,12 @@ export class Game {
                 break;
     
             case 'Time Warp':
+                // *** FIX: Corrected ability timer to match description (3s)
+                const timeWarpDuration = 3;
                 if (!this.activeShipAbilities[abilityName]) {
                     this.activeShipAbilities[abilityName] = { originalEnemySpeedMultiplier: this.currentEnemySpeedMultiplier };
                 }
-                this.activeShipAbilities[abilityName].timer = 15;
+                this.activeShipAbilities[abilityName].timer = timeWarpDuration;
                 this.currentEnemySpeedMultiplier = this.activeShipAbilities[abilityName].originalEnemySpeedMultiplier * 0.3;
                 break;
     
@@ -1151,14 +1190,6 @@ export class Game {
                     }
                 }
                 break;
-    
-            case 'Orbital Laser':
-                if (!this.activeShipAbilities[abilityName]) {
-                    this.activeShipAbilities[abilityName] = { originalDamage: this.currentShipStats.damage };
-                }
-                this.activeShipAbilities[abilityName].timer = 15;
-                this.currentShipStats.damage = this.activeShipAbilities[abilityName].originalDamage * 3;
-                break;
         }
     }
     
@@ -1177,6 +1208,7 @@ export class Game {
                     this.enemies.forEach(enemy => {
                         enemy.isStunned = false;
                     });
+                    // *** FIX: Ensure the boss is also unstunned
                     if (this.boss && this.boss.active) {
                         this.boss.isStunned = false;
                     }
@@ -1197,17 +1229,21 @@ export class Game {
                     delete this.activeShipAbilities[abilityName];
                 }
                 break;
-    
-            case 'Orbital Laser':
-                if (this.activeShipAbilities[abilityName]) {
-                    this.currentShipStats.damage = this.activeShipAbilities[abilityName].originalDamage;
-                    delete this.activeShipAbilities[abilityName];
-                }
-                break;
+            
+            // *** FIX: Removed dead code for 'Orbital Laser' which was not a defined ability
         }
     }
 
     handleKeyDown(e) {
+        if (this.tutorialActive) {
+            // Block all gameplay/menu input except tutorial advance
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                this.advanceTutorial();
+            }
+            return;
+        }
+
         this.keys[e.key] = true;
 
         if (this.currentState === GAME_STATES.SHOP) {
@@ -1383,23 +1419,19 @@ export class Game {
 
     initializeBase() {
         const baseSprite = this.assetLoader.getAsset('baseSprite');
-
-        const desiredBaseHeight = this.canvas.height * 0.25; 
-        let calculatedWidth = this.canvas.width; 
+        const desiredBaseHeight = this.canvas.height * 0.25;
+        let calculatedWidth = this.canvas.width;
 
         if (baseSprite && baseSprite.naturalWidth > 0 && baseSprite.naturalHeight > 0) {
             const aspectRatio = baseSprite.naturalWidth / baseSprite.naturalHeight;
             calculatedWidth = desiredBaseHeight * aspectRatio;
-            this.base.height = desiredBaseHeight;
-            this.base.width = calculatedWidth;
-        } else {
-            this.base.width = this.canvas.width * 0.8;
-            this.base.height = this.canvas.height * 0.25; 
         }
 
-        this.base.width = Math.max(this.base.width, 100); 
-        this.base.height = Math.max(this.base.height, 50); 
+        this.base.visualWidth = Math.max(calculatedWidth, 100);
+        this.base.height = Math.max(desiredBaseHeight, 50);
 
+        // Make the collision width smaller than the visual width
+        this.base.width = this.base.visualWidth * 0.7;
         this.base.x = (this.canvas.width - this.base.width) / 2;
         this.base.y = this.canvas.height - this.base.height;
     }
@@ -1461,7 +1493,6 @@ export class Game {
     }
 
     spawnEnemy() {
-        // *** BUG FIX: Stop spawning enemies when score is reached ***
         if (this.score >= this.levelScoreToClear || this.enemies.length >= this.maxEnemiesOnScreen || this.isBossPhase) return;
         
         const enemyWidth = 80;
@@ -1686,6 +1717,56 @@ export class Game {
             this.levelPlotDisplay.textContent = levelConfig.plot;
         } else {
             this.levelPlotDisplay.textContent = 'No plot available for this level.';
+        }
+    }
+
+    showTutorial() {
+        this.tutorialActive = true;
+        this.tutorialIndex = 0;
+        this.commanderPopup.style.display = 'flex';
+        this.showMenu(null); // Hide all menus
+        this.typeCommanderMessage(this.tutorialMessages[this.tutorialIndex]);
+        this.commanderNextBtn.disabled = true;
+    }
+
+    typeCommanderMessage(message) {
+        clearInterval(this.typingInterval);
+        this.currentTypedText = '';
+        this.commanderText.textContent = '';
+        let i = 0;
+        this.commanderCursor.style.display = 'inline-block';
+        this.commanderNextBtn.disabled = true;
+        this.typingInterval = setInterval(() => {
+            if (i < message.length) {
+                this.currentTypedText += message[i];
+                this.commanderText.textContent = this.currentTypedText;
+                i++;
+            } else {
+                clearInterval(this.typingInterval);
+                this.commanderCursor.style.display = 'inline-block';
+                this.commanderNextBtn.disabled = false;
+            }
+        }, 24);
+    }
+
+    advanceTutorial() {
+        if (!this.tutorialActive) return;
+        this.tutorialIndex++;
+        if (this.tutorialIndex < this.tutorialMessages.length) {
+            this.typeCommanderMessage(this.tutorialMessages[this.tutorialIndex]);
+            this.commanderNextBtn.disabled = true;
+        } else {
+            this.endTutorial();
+        }
+    }
+
+    endTutorial() {
+        this.tutorialActive = false;
+        this.commanderPopup.style.display = 'none';
+        localStorage.setItem('tutorialCompleted', '1');
+        this.showMenu(GAME_STATES.PLAYING);
+        if (this.soundEnabled && this.bgMusic && this.bgMusic.paused) {
+            this.bgMusic.play().catch(e => console.error("Error playing music:", e));
         }
     }
 }
