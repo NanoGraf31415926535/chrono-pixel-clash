@@ -69,34 +69,33 @@ export class Enemy {
         }
 
         if (this.isBoss) {
-            // *** FEATURE: Phase Transition Logic ***
+            // Phase transition logic
             if (!this.hasEnteredPhaseTwo && this.health <= this.maxHealth / 2) {
                 this.hasEnteredPhaseTwo = true;
                 this.phase = 2;
-                this.horizontalSpeed *= 1.5; // Increase speed in phase 2
-                this.baseFireRate *= 0.75; // Increase base fire rate in phase 2
+                this.horizontalSpeed *= 1.5;
+                this.baseFireRate *= 0.75;
                 this.fireRate = this.baseFireRate;
             }
 
-            // *** FEATURE: Rage Mode Logic ***
+            // Rage mode logic
             if (this.isEnraged) {
                 this.rageTimer -= deltaTime;
                 if (this.rageTimer <= 0) {
                     this.isEnraged = false;
-                    this.fireRate = this.baseFireRate; // Revert to base fire rate
+                    this.fireRate = this.baseFireRate;
                 }
             } else {
                 this.rageCooldownTimer -= deltaTime;
                 if (this.rageCooldownTimer <= 0) {
                     this.isEnraged = true;
                     this.rageTimer = this.rageDuration;
-                    this.fireRate = this.baseFireRate * 0.33; // Significantly increase fire rate
+                    this.fireRate = this.baseFireRate * 0.33;
                     this.rageCooldownTimer = this.rageCooldown;
                 }
             }
 
-            this.handleDodging(deltaTime, playerProjectiles);
-
+            // Improved boss movement: actively track player
             if (this.isEntering) {
                 this.y += this.entrySpeed * deltaTime;
                 if (this.y >= 50) {
@@ -106,17 +105,39 @@ export class Enemy {
             } else if (this.isDodging) {
                 this.x += this.horizontalDirection * this.dodgeSpeed * deltaTime;
             } else if (!this.isChargingSpecial) {
-                this.x += this.horizontalDirection * this.horizontalSpeed * deltaTime;
-                if (this.x <= 0 || this.x + this.width >= canvas.width) {
-                    this.horizontalDirection *= -1;
-                }
+                // Track player horizontally, but with some inertia
+                const playerCenterX = player.x + player.width / 2;
+                const bossCenterX = this.x + this.width / 2;
+                const dx = playerCenterX - bossCenterX;
+                // Move towards player, but not instantly
+                this.x += Math.sign(dx) * Math.min(Math.abs(dx), this.horizontalSpeed * deltaTime);
+                // Clamp to canvas
+                this.x = Math.max(0, Math.min(this.x, canvas.width - this.width));
             }
-            
-            this.x = Math.max(0, Math.min(this.x, canvas.width - this.width));
 
-            const currentTime = performance.now() / 1000;
+            // Improved dodging: react to projectiles closer to boss
+            this.handleDodging(deltaTime, playerProjectiles);
+
             let newProjectiles = [];
             let newEnemies = [];
+            const currentTime = performance.now() / 1000;
+
+            // Smarter ability usage
+            // Use special if player is close, or at random intervals, or after taking damage
+            if (!this.isChargingSpecial && !this.isBarraging) {
+                // If player is close (within 200px horizontally), use special
+                const playerDist = Math.abs((player.x + player.width / 2) - (this.x + this.width / 2));
+                if (playerDist < 200 && this.specialAttackTimer < 2) {
+                    this.beginSpecialAttack();
+                } else if (this.specialAttackTimer <= 0) {
+                    // Randomize special attack timing a bit
+                    if (Math.random() < 0.5) {
+                        this.beginSpecialAttack();
+                    } else {
+                        this.specialAttackTimer = 2 + Math.random() * 3;
+                    }
+                }
+            }
 
             if (this.isChargingSpecial) {
                 this.chargeTimer -= deltaTime;
@@ -128,7 +149,9 @@ export class Enemy {
             } else if (this.isBarraging) {
                 this.barrageTimer += deltaTime;
                 if (this.barrageTimer >= this.barrageShotDelay && this.barrageCount < this.barrageShots) {
-                    const angle = Math.atan2(player.y - (this.y + this.height), player.x - (this.x + this.width / 2));
+                    // Predict player movement for barrage
+                    const predictedX = player.x + player.width / 2 + player.speed * 0.2 * (Math.random() - 0.5);
+                    const angle = Math.atan2(player.y - (this.y + this.height), predictedX - (this.x + this.width / 2));
                     const velocity = {
                         x: Math.cos(angle) * this.projectileSpeed * 1.5,
                         y: Math.sin(angle) * this.projectileSpeed * 1.5
@@ -145,17 +168,23 @@ export class Enemy {
                 }
             } else {
                 if (currentTime - this.lastShotTime >= this.fireRate) {
-                    newProjectiles.push(...this.fire(player));
+                    // Predict player movement for main shot
+                    const predictedX = player.x + player.width / 2 + player.speed * 0.3 * (Math.random() - 0.5);
+                    const angle = Math.atan2(player.y - (this.y + this.height), predictedX - (this.x + this.width / 2));
+                    const velocity = {
+                        x: Math.cos(angle) * this.projectileSpeed,
+                        y: Math.sin(angle) * this.projectileSpeed
+                    };
+                    newProjectiles.push(new Projectile(
+                        this.x + this.width / 2, this.y + this.height,
+                        10, 20,
+                        0, 'down', 'pink', this.projectileDamage, 'boss', velocity
+                    ));
                     this.lastShotTime = currentTime;
                 }
-
                 this.specialAttackTimer -= deltaTime;
-                if (this.specialAttackTimer <= 0) {
-                    this.beginSpecialAttack();
-                }
             }
             return { newProjectiles, newEnemies };
-
         } else {
             this.y += this.speed * deltaTime;
             if (this.y > canvas.height) {
@@ -289,20 +318,24 @@ export class Enemy {
     draw(ctx, assetLoader) {
         const sprite = assetLoader.getAsset(this.spriteName);
         ctx.save();
-        if (this.isChargingSpecial) {
-            const glow = Math.abs(Math.sin(performance.now() / 150));
-            ctx.filter = `brightness(1.5) drop-shadow(0 0 ${15 * glow}px yellow)`;
+        // Visual cues for special attacks
+        if (this.isChargingSpecial && this.specialAttackType !== 'chargeBeam') {
+            // Telegraph: pulsing glow and color overlay
+            const glow = 20 + 20 * Math.abs(Math.sin(performance.now() / 120));
+            let color = 'yellow';
+            if (this.specialAttackType === 'laserBarrage') color = 'cyan';
+            if (this.specialAttackType === 'scatterShot') color = 'lime';
+            if (this.specialAttackType === 'summonMinions') color = 'orange';
+            ctx.filter = `brightness(1.5) drop-shadow(0 0 ${glow}px ${color})`;
+            ctx.globalAlpha = 0.85;
         } else if (this.isEnraged) {
-            // *** FEATURE: Visual indicator for rage mode ***
             const glow = Math.abs(Math.sin(performance.now() / 100));
             ctx.filter = `hue-rotate(330deg) brightness(1.2) drop-shadow(0 0 ${10 * glow}px red)`;
         } else if (this.isDodging) {
             ctx.filter = 'brightness(0.8) saturate(0)';
         } else if (this.phase === 2) {
-            // *** FEATURE: Visual indicator for phase 2 ***
             ctx.filter = 'saturate(2) brightness(1.1)';
         }
-        
         if (sprite) {
             ctx.drawImage(sprite, this.x, this.y, this.width, this.height);
         } else {
@@ -310,6 +343,20 @@ export class Enemy {
             ctx.fillRect(this.x, this.y, this.width, this.height);
         }
         ctx.restore();
+        // Draw special effect overlays for barrage, scatterShot, minion summon
+        if (this.isChargingSpecial && this.specialAttackType !== 'chargeBeam') {
+            ctx.save();
+            let color = 'yellow';
+            if (this.specialAttackType === 'laserBarrage') color = 'cyan';
+            if (this.specialAttackType === 'scatterShot') color = 'lime';
+            if (this.specialAttackType === 'summonMinions') color = 'orange';
+            ctx.globalAlpha = 0.25 + 0.25 * Math.abs(Math.sin(performance.now() / 120));
+            ctx.beginPath();
+            ctx.arc(this.x + this.width/2, this.y + this.height/2, this.width * 0.7, 0, 2 * Math.PI);
+            ctx.fillStyle = color;
+            ctx.fill();
+            ctx.restore();
+        }
 
         if (this.health < this.maxHealth) {
             const healthBarWidth = this.width * 0.8;

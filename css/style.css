@@ -358,7 +358,8 @@ canvas {
 /* --- END ENHANCED SHOP STYLES --- */
 
 #levelMapScreen {
-    background-color: transparent;
+    background: url('../assets/images/backgrounds/Upgrade_menu.JPG') no-repeat center center;
+    background-size: cover;
     border: none;
     box-shadow: none;
     padding: 20px;

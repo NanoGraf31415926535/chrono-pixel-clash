@@ -274,6 +274,9 @@ export class Game {
         this.currentTypedText = '';
         this.commanderNextBtn.addEventListener('click', () => this.advanceTutorial());
 
+        this.holdingBombPowerUp = false;
+        this.bombPlacement = { x: 0, y: 0, radius: 250 };
+
         this.init();
     }
 
@@ -315,6 +318,19 @@ export class Game {
 
         this.loadAssets();
         this.updateShipStats();
+
+        this.canvas.addEventListener('mousemove', (e) => {
+            if (this.holdingBombPowerUp) {
+                const rect = this.canvas.getBoundingClientRect();
+                this.bombPlacement.x = e.clientX - rect.left;
+                this.bombPlacement.y = e.clientY - rect.top;
+            }
+        });
+        window.addEventListener('keydown', (e) => {
+            if (this.holdingBombPowerUp && (e.key === ' ' || e.key === 'Enter')) {
+                this.placeBomb();
+            }
+        });
     }
 
     loadAssets() {
@@ -945,11 +961,25 @@ export class Game {
                 const powerUp = this.powerUps[i];
                 if (!powerUp.active) continue;
                 if (checkCollision(this.player, powerUp)) {
-                    powerUp.active = false;
-                    this.applyPowerUpEffect(powerUp.type, powerUp.duration);
-                    if (this.soundEnabled && this.powerUpSound) this.powerUpSound.play().catch(e => console.error(e));
+                    if (powerUp.type === 'bomb' && !this.holdingBombPowerUp) {
+                        powerUp.active = false;
+                        this.holdingBombPowerUp = true;
+                        // Start bomb placement at player center
+                        this.bombPlacement.x = this.player.x + this.player.width / 2;
+                        this.bombPlacement.y = this.player.y + this.player.height / 2;
+                        if (this.soundEnabled && this.powerUpSound) this.powerUpSound.play().catch(e => console.error(e));
+                    } else if (powerUp.type !== 'bomb') {
+                        powerUp.active = false;
+                        this.applyPowerUpEffect(powerUp.type, powerUp.duration);
+                        if (this.soundEnabled && this.powerUpSound) this.powerUpSound.play().catch(e => console.error(e));
+                    }
                 }
             }
+        }
+        // Bomb follows player while holding
+        if (this.holdingBombPowerUp && this.player) {
+            this.bombPlacement.x = this.player.x + this.player.width / 2;
+            this.bombPlacement.y = this.player.y + this.player.height / 2;
         }
     }
 
@@ -1018,13 +1048,34 @@ export class Game {
         this.enemyProjectiles.forEach(p => p.draw(this.ctx));
         this.explosions.forEach(e => e.draw(this.ctx));
         this.powerUps.forEach(p => p.draw(this.ctx, this.assetLoader));
-        
         this.enemies.forEach(e => e.draw(this.ctx, this.assetLoader));
-        
         if (this.boss && this.boss.active) {
             this.boss.draw(this.ctx, this.assetLoader);
         }
-
+        // Draw bomb placement range indicator and bomb visual if holding
+        if (this.holdingBombPowerUp) {
+            // Draw range circle
+            this.ctx.save();
+            this.ctx.globalAlpha = 0.3;
+            this.ctx.beginPath();
+            this.ctx.arc(this.bombPlacement.x, this.bombPlacement.y, this.bombPlacement.radius, 0, 2 * Math.PI);
+            this.ctx.fillStyle = 'yellow';
+            this.ctx.fill();
+            this.ctx.globalAlpha = 1.0;
+            this.ctx.lineWidth = 3;
+            this.ctx.strokeStyle = 'orange';
+            this.ctx.stroke();
+            this.ctx.restore();
+            // Draw bomb visual (reuse explosion PNG)
+            const bombSprite = this.assetLoader.getAsset('explosionSprite');
+            if (bombSprite) {
+                const size = 64;
+                this.ctx.save();
+                this.ctx.globalAlpha = 0.8;
+                this.ctx.drawImage(bombSprite, this.bombPlacement.x - size/2, this.bombPlacement.y - size/2, size, size);
+                this.ctx.restore();
+            }
+        }
         this.drawBase();
         this.drawHUD();
     }
@@ -1462,15 +1513,14 @@ export class Game {
         const bossHeight = 250;
         const bossX = (this.canvas.width - bossWidth) / 2;
         const bossY = -bossHeight;
-
         const difficulty = this.difficultySettings[this.currentDifficulty];
-        const bossHealth = (100 + this.currentLevel * 20) * bossConfig.healthMultiplier * difficulty.enemyHealth * (1 + this.currentShipStats.damage / 10);
-        const bossSpeed = 10 * bossConfig.speedMultiplier * difficulty.enemySpeed;
-
+        // Boss health and speed scale with level
+        const bossHealth = Math.round((100 + this.currentLevel * 30) * bossConfig.healthMultiplier * difficulty.enemyHealth * Math.pow(1.15, this.currentLevel));
+        const bossSpeed = 10 * bossConfig.speedMultiplier * difficulty.enemySpeed * (1 + (this.currentLevel - 1) * 0.1);
         this.boss = new Enemy(bossX, bossY, bossWidth, bossHeight, bossSpeed, 'boss', bossConfig.spriteName, true, bossConfig.fireRate, bossConfig.projectileSpeed, bossConfig.projectileDamage, bossConfig.specialAttack);
         this.boss.health = bossHealth;
         this.boss.maxHealth = bossHealth;
-        this.boss.damage = 20;
+        this.boss.damage = 20 + this.currentLevel * 2;
     }
 
     bossDefeated() {
@@ -1494,7 +1544,6 @@ export class Game {
 
     spawnEnemy() {
         if (this.score >= this.levelScoreToClear || this.enemies.length >= this.maxEnemiesOnScreen || this.isBossPhase) return;
-        
         const enemyWidth = 80;
         const enemyHeight = 80;
         const enemyX = Math.random() * (this.canvas.width - enemyWidth);
@@ -1503,13 +1552,15 @@ export class Game {
         if (this.activeShipAbilities.timeWarp) {
             effectiveEnemySpeedMultiplier = this.activeShipAbilities.timeWarp.originalEnemySpeedMultiplier * this.activeShipAbilities.timeWarp.slowFactor;
         }
-        const baseEnemySpeed = (80 + Math.random() * 40);
-        const enemySpeed = baseEnemySpeed * effectiveEnemySpeedMultiplier * this.difficultySettings[this.currentDifficulty].enemySpeed;
-        
+        // Progressive scaling: health and speed increase with level
+        const baseEnemySpeed = 80 + Math.random() * 40;
+        const levelScale = 1 + (this.currentLevel - 1) * 0.15; // 15% more per level
+        const enemySpeed = baseEnemySpeed * effectiveEnemySpeedMultiplier * this.difficultySettings[this.currentDifficulty].enemySpeed * levelScale;
         const randomSpriteName = this.currentLevelEnemyTypes[Math.floor(Math.random() * this.currentLevelEnemyTypes.length)];
         const newEnemy = new Enemy(enemyX, enemyY, enemyWidth, enemyHeight, enemySpeed, 'basic', randomSpriteName);
-        newEnemy.health = 3 * this.currentEnemyHealthMultiplier;
-        newEnemy.maxHealth = 3 * this.currentEnemyHealthMultiplier;
+        // Health scales exponentially for challenge
+        newEnemy.health = Math.round(3 * this.currentEnemyHealthMultiplier * Math.pow(1.18, this.currentLevel));
+        newEnemy.maxHealth = newEnemy.health;
         this.enemies.push(newEnemy);
     }
 
@@ -1543,52 +1594,16 @@ export class Game {
                 this.activePowerUpEffects.fireRate.timer = duration;
                 break;
             case 'money':
-                this.money += 50;
+                // Money reward scales with level
+                this.money += 50 + this.currentLevel * 10;
                 break;
             case 'heal':
-                this.playerHealth = Math.min(this.playerHealth + 25, this.currentShipStats.health);
+                // Heal scales with level
+                this.playerHealth = Math.min(this.playerHealth + 25 + this.currentLevel * 2, this.currentShipStats.health);
                 break;
-            case 'bomb': {
-                const bombRadius = 250;
-                const playerCenterX = this.player.x + this.player.width / 2;
-                const playerCenterY = this.player.y + this.player.height / 2;
-
-                this.explosions.push(new Explosion(playerCenterX, playerCenterY, this.assetLoader.getAsset('explosionSprite'), 20, bombRadius, 0.5));
-                if (this.soundEnabled && this.explosionSound) {
-                    this.explosionSound.currentTime = 0;
-                    this.explosionSound.play().catch(e => console.error("Error playing explosion sound:", e));
-                }
-                
-                this.enemies.forEach(enemy => {
-                    if (!enemy.active) return;
-                    const enemyCenterX = enemy.x + enemy.width / 2;
-                    const enemyCenterY = enemy.y + enemy.height / 2;
-                    const distance = Math.sqrt(Math.pow(playerCenterX - enemyCenterX, 2) + Math.pow(playerCenterY - enemyCenterY, 2));
-
-                    if (distance <= bombRadius) {
-                        enemy.active = false;
-                        const difficulty = this.difficultySettings[this.currentDifficulty];
-                        this.score += Math.round(10 * difficulty.scoreRate);
-                        this.money += Math.round(5 * difficulty.moneyRate);
-                        this.experience += Math.round(10 * difficulty.expRate);
-                    }
-                });
-
-                if (this.boss && this.boss.active) {
-                    const bossCenterX = this.boss.x + this.boss.width / 2;
-                    const bossCenterY = this.boss.y + this.boss.height / 2;
-                    const distance = Math.sqrt(Math.pow(playerCenterX - bossCenterX, 2) + Math.pow(playerCenterY - bossCenterY, 2));
-                    
-                    if (distance <= bombRadius) {
-                        this.boss.health -= 200;
-                        if (this.boss.health <= 0) {
-                            this.boss.active = false;
-                            this.bossDefeated();
-                        }
-                    }
-                }
+            case 'bomb':
+                // Now handled by holdingBombPowerUp logic
                 break;
-            }
             case 'slowEnemies':
                 if (!this.activePowerUpEffects.slowEnemies) {
                     this.activePowerUpEffects.slowEnemies = { slowFactor: 0.5 };
@@ -1671,6 +1686,9 @@ export class Game {
     populateLevelMap() {
         this.levelButtonsContainer.innerHTML = '';
         const maxAvailableLevel = this.completedLevels.length > 0 ? Math.max(...this.completedLevels) + 1 : 1;
+        let selectedLevelIndex = maxAvailableLevel;
+        if (selectedLevelIndex >= this.levels.length) selectedLevelIndex = this.levels.length - 1;
+        if (selectedLevelIndex < 1) selectedLevelIndex = 1;
 
         for (let i = 1; i < this.levels.length; i++) {
             const levelConfig = this.levels[i];
@@ -1692,19 +1710,19 @@ export class Game {
                 button.textContent += ' (Locked)';
             } else {
                 button.addEventListener('click', () => this.handleLevelSelection(i));
-                if (i === this.currentLevel) {
+                if (i === selectedLevelIndex) {
                     button.classList.add('selected');
                 }
             }
 
             button.addEventListener('mouseenter', () => this.displayLevelPlot(i));
             button.addEventListener('focus', () => this.displayLevelPlot(i));
-            button.addEventListener('mouseleave', () => this.displayLevelPlot(this.currentLevel));
-            button.addEventListener('blur', () => this.displayLevelPlot(this.currentLevel));
+            button.addEventListener('mouseleave', () => this.displayLevelPlot(selectedLevelIndex));
+            button.addEventListener('blur', () => this.displayLevelPlot(selectedLevelIndex));
 
             this.levelButtonsContainer.appendChild(button);
         }
-        this.displayLevelPlot(this.currentLevel);
+        this.displayLevelPlot(selectedLevelIndex);
 
         this.currentMenuButtons = Array.from(this.levelButtonsContainer.querySelectorAll('.level-button:not(:disabled)'));
         this.currentMenuButtons.push(this.levelMapBackToMainBtn);
@@ -1768,5 +1786,45 @@ export class Game {
         if (this.soundEnabled && this.bgMusic && this.bgMusic.paused) {
             this.bgMusic.play().catch(e => console.error("Error playing music:", e));
         }
+    }
+
+    placeBomb() {
+        if (!this.holdingBombPowerUp) return;
+        const bombRadius = this.bombPlacement.radius;
+        const x = this.bombPlacement.x;
+        const y = this.bombPlacement.y;
+        this.explosions.push(new Explosion(x, y, this.assetLoader.getAsset('explosionSprite'), 20, bombRadius, 0.5));
+        if (this.soundEnabled && this.explosionSound) {
+            this.explosionSound.currentTime = 0;
+            this.explosionSound.play().catch(e => console.error("Error playing explosion sound:", e));
+        }
+        // Affect enemies
+        this.enemies.forEach(enemy => {
+            if (!enemy.active) return;
+            const enemyCenterX = enemy.x + enemy.width / 2;
+            const enemyCenterY = enemy.y + enemy.height / 2;
+            const distance = Math.sqrt(Math.pow(x - enemyCenterX, 2) + Math.pow(y - enemyCenterY, 2));
+            if (distance <= bombRadius) {
+                enemy.active = false;
+                const difficulty = this.difficultySettings[this.currentDifficulty];
+                this.score += Math.round(10 * difficulty.scoreRate);
+                this.money += Math.round(5 * difficulty.moneyRate);
+                this.experience += Math.round(10 * difficulty.expRate);
+            }
+        });
+        // Affect boss
+        if (this.boss && this.boss.active) {
+            const bossCenterX = this.boss.x + this.boss.width / 2;
+            const bossCenterY = this.boss.y + this.boss.height / 2;
+            const distance = Math.sqrt(Math.pow(x - bossCenterX, 2) + Math.pow(y - bossCenterY, 2));
+            if (distance <= bombRadius) {
+                this.boss.health -= 200;
+                if (this.boss.health <= 0) {
+                    this.boss.active = false;
+                    this.bossDefeated();
+                }
+            }
+        }
+        this.holdingBombPowerUp = false;
     }
 }
