@@ -940,6 +940,7 @@ export class Game {
     
     update(deltaTime) {
         if (this.currentState === GAME_STATES.SHOP) return;
+        if (this.currentState === GAME_STATES.PAUSED) return; // <--- Add this line to fully pause game logic
 
         // Check for achievements
         const unlockedAchievements = this.achievementManager.checkAll();

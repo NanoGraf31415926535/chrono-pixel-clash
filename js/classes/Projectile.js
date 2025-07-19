@@ -120,8 +120,36 @@ export class Projectile {
             ctx.fillRect(this.x, this.y, this.width, this.height);
             ctx.restore();
         } else {
-            ctx.fillStyle = this.color;
-            ctx.fillRect(this.x, this.y, this.width, this.height);
+            // Laser effect for player projectiles
+            if (this.type === 'player') {
+                ctx.save();
+                // Animate laser width for pulse effect
+                const time = performance.now();
+                const pulse = 0.85 + 0.15 * Math.sin(time / 80 + this.x * 0.1);
+                const laserWidth = this.width * pulse;
+                // Create a vertical gradient for the laser
+                const grad = ctx.createLinearGradient(this.x, this.y, this.x, this.y + this.height);
+                grad.addColorStop(0, 'rgba(0,255,255,0.95)');
+                grad.addColorStop(0.2, 'rgba(0,255,255,0.7)');
+                grad.addColorStop(0.5, 'rgba(255,255,255,0.9)');
+                grad.addColorStop(0.8, 'rgba(0,255,255,0.7)');
+                grad.addColorStop(1, 'rgba(0,255,255,0.95)');
+                ctx.shadowColor = '#00ffff';
+                ctx.shadowBlur = 18;
+                ctx.globalAlpha = 0.92;
+                ctx.fillStyle = grad;
+                // Center the laser horizontally
+                ctx.fillRect(this.x + (this.width - laserWidth) / 2, this.y, laserWidth, this.height);
+                // Add a subtle outer glow
+                ctx.globalAlpha = 0.35;
+                ctx.shadowBlur = 32;
+                ctx.fillStyle = 'rgba(0,255,255,0.5)';
+                ctx.fillRect(this.x + (this.width - laserWidth) / 2 - 2, this.y - 2, laserWidth + 4, this.height + 4);
+                ctx.restore();
+            } else {
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+            }
         }
     }
 }

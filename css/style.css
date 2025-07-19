@@ -871,3 +871,60 @@ canvas {
     align-self: flex-end;
     min-width: 90px;
 }
+
+/* --- MINIMALISTIC PIXEL SHOOTER BUTTON STYLE --- */
+.pixel-shooter-btn {
+    display: block;
+    width: 320px;
+    max-width: 90vw;
+    margin: 18px auto;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 1.1em;
+    color: #fff;
+    background: #1a0033;
+    border: 3px solid #00ffff;
+    border-radius: 0;
+    box-shadow: none;
+    padding: 16px 0;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    text-shadow: 1px 1px 0 #000;
+    cursor: pointer;
+    transition: background 0.12s, color 0.12s, border-color 0.12s, transform 0.08s;
+    outline: none;
+    position: relative;
+    overflow: hidden;
+    image-rendering: pixelated;
+    z-index: 1;
+}
+
+.pixel-shooter-btn:hover, .pixel-shooter-btn:focus {
+    background: #00ffff;
+    color: #1a0033;
+    border-color: #ff00ff;
+    text-shadow: 0 0 6px #ff00ff, 1px 1px #000;
+    transform: scale(1.03);
+}
+
+.pixel-shooter-btn:active {
+    background: #110022;
+    color: #39FF14;
+    border-color: #39FF14;
+    text-shadow: 0 0 6px #39FF14, 1px 1px #000;
+    transform: scale(0.97);
+}
+
+/* Center main menu buttons in a single column */
+#mainMenu {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    width: 100%;
+    padding: 0;
+}
+
+#mainMenu h1 {
+    margin-bottom: 32px;
+}
