@@ -83,97 +83,119 @@ canvas {
     z-index: 5;
 }
 
-/* FEATURE: New popup power-up notification system */
+/* --- NOTIFICATION SYSTEMS --- */
 #powerUpIndicators {
     position: fixed;
-    top: 50%;
-    right: 20px; /* Position on the right side of screen */
-    transform: translateY(-50%);
+    top: 120px;
+    right: 20px;
     z-index: 1000;
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    align-items: flex-end;
+    gap: 12px;
     pointer-events: none;
+    max-width: 280px;
 }
 
+#achievementIndicators {
+    position: fixed;
+    top: 160px;
+    right: 20px;
+    z-index: 1001;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 12px;
+    pointer-events: none;
+    max-width: 320px;
+}
+
+/* --- POWER-UP NOTIFICATIONS (Right Side) --- */
 .powerup-notification {
-    width: 320px;
-    height: 80px;
-    background: linear-gradient(145deg, 
-        rgba(20, 10, 50, 0.95), 
-        rgba(40, 20, 80, 0.95)
+    width: 280px;
+    height: 70px;
+    background: linear-gradient(135deg, 
+        rgba(15, 25, 60, 0.95) 0%,
+        rgba(25, 40, 85, 0.95) 50%,
+        rgba(35, 15, 65, 0.95) 100%
     );
-    border: 3px solid var(--retro-neon-blue);
+    border: 2px solid var(--retro-neon-blue);
     box-shadow: 
-        0 0 25px var(--retro-neon-blue),
-        inset 0 0 20px rgba(0, 255, 255, 0.1),
-        0 0 0 3px #000;
+        0 0 20px rgba(0, 255, 255, 0.6),
+        inset 0 0 15px rgba(0, 255, 255, 0.15),
+        0 4px 15px rgba(0, 0, 0, 0.4);
     display: flex;
     align-items: center;
-    padding: 12px;
-    gap: 15px;
+    padding: 10px 14px;
+    gap: 12px;
     position: relative;
-    transform: translateX(400px); /* Start off-screen to the right */
-    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    animation: powerupGlow 2s ease-in-out infinite alternate;
-    backdrop-filter: blur(5px);
+    transform: translateX(120%);
+    opacity: 0;
+    transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.4s ease;
+    backdrop-filter: blur(8px);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.powerup-notification::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, 
+        transparent, 
+        rgba(0, 255, 255, 0.3), 
+        transparent
+    );
+    transition: left 0.6s ease;
+}
+
+.powerup-notification.show::before {
+    left: 100%;
 }
 
 .powerup-notification.show {
-    transform: translateX(0); /* Slide to visible position */
+    transform: translateX(0);
+    opacity: 1;
 }
 
 .powerup-notification.hide {
-    transform: translateX(400px); /* Slide back off-screen */
-}
-
-@keyframes powerupGlow {
-    0% { 
-        box-shadow: 
-            0 0 25px var(--retro-neon-blue),
-            inset 0 0 20px rgba(0, 255, 255, 0.1),
-            0 0 0 3px #000;
-    }
-    100% { 
-        box-shadow: 
-            0 0 35px var(--retro-neon-blue),
-            inset 0 0 30px rgba(0, 255, 255, 0.2),
-            0 0 0 3px #000;
-    }
+    transform: translateX(120%);
+    opacity: 0;
 }
 
 .powerup-icon {
-    width: 56px;
-    height: 56px;
+    width: 48px;
+    height: 48px;
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
     border: 2px solid var(--retro-neon-blue);
-    box-shadow: 0 0 15px var(--retro-neon-blue);
+    box-shadow: 0 0 12px rgba(0, 255, 255, 0.7);
     image-rendering: pixelated;
     flex-shrink: 0;
+    border-radius: 6px;
     position: relative;
+    overflow: hidden;
 }
 
-.powerup-icon::before {
+.powerup-icon::after {
     content: '';
     position: absolute;
-    top: -2px;
-    left: -2px;
-    right: -2px;
-    bottom: -2px;
+    inset: 0;
     background: linear-gradient(45deg, 
         transparent 30%, 
-        rgba(0, 255, 255, 0.3) 50%, 
+        rgba(0, 255, 255, 0.2) 50%, 
         transparent 70%
     );
-    animation: iconShine 3s linear infinite;
-    pointer-events: none;
+    animation: iconShimmer 2s ease-in-out infinite;
 }
 
-@keyframes iconShine {
-    0% { transform: translateX(-100%); }
-    100% { transform: translateX(100%); }
+@keyframes iconShimmer {
+    0%, 100% { transform: translateX(-100%); }
+    50% { transform: translateX(100%); }
 }
 
 .powerup-content {
@@ -181,193 +203,245 @@ canvas {
     display: flex;
     flex-direction: column;
     justify-content: center;
-    gap: 8px;
+    gap: 6px;
+    overflow: hidden;
 }
 
 .powerup-name {
     color: var(--retro-neon-blue);
-    font-family: 'Press Start 2P', monospace;
-    font-size: 0.9em;
-    text-shadow: 2px 2px #000, 0 0 8px var(--retro-neon-blue);
+    font-size: 0.85em;
+    text-shadow: 
+        1px 1px 0 #000, 
+        0 0 8px var(--retro-neon-blue);
     text-transform: uppercase;
     margin: 0;
-    line-height: 1.2;
+    letter-spacing: 0.5px;
 }
 
 .powerup-timer {
     color: var(--retro-neon-green);
-    font-family: 'Press Start 2P', monospace;
-    font-size: 0.8em;
-    text-shadow: 2px 2px #000, 0 0 8px var(--retro-neon-green);
+    font-size: 0.75em;
+    text-shadow: 
+        1px 1px 0 #000, 
+        0 0 6px var(--retro-neon-green);
     margin: 0;
 }
 
 .powerup-progress {
     width: 100%;
-    height: 6px;
-    background: rgba(0, 0, 0, 0.5);
-    border: 1px solid var(--retro-neon-blue);
-    position: relative;
+    height: 5px;
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid rgba(0, 255, 255, 0.3);
+    border-radius: 3px;
     overflow: hidden;
+    position: relative;
 }
 
 .powerup-progress-bar {
     height: 100%;
     background: linear-gradient(90deg, 
-        var(--retro-neon-green), 
-        var(--retro-neon-blue)
+        var(--retro-neon-green) 0%, 
+        var(--retro-neon-blue) 50%, 
+        var(--retro-neon-pink) 100%
     );
     transition: width 0.1s linear;
-    position: relative;
+    border-radius: 2px;
+    box-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
 }
 
-.powerup-progress-bar::after {
+/* --- ACHIEVEMENT NOTIFICATIONS (Right Side) --- */
+@keyframes achievement-progress {
+    from { width: 100%; }
+    to { width: 0%; }
+}
+
+@keyframes achievementGlow {
+    0%, 100% { 
+        box-shadow: 0 0 20px rgba(255, 215, 0, 0.4),
+                    inset 0 0 15px rgba(255, 215, 0, 0.1),
+                    0 4px 15px rgba(0, 0, 0, 0.3);
+    }
+    50% { 
+        box-shadow: 0 0 35px rgba(255, 215, 0, 0.7),
+                    inset 0 0 25px rgba(255, 215, 0, 0.2),
+                    0 6px 20px rgba(0, 0, 0, 0.4);
+    }
+}
+
+@keyframes starBurst {
+    0% { 
+        transform: scale(0) rotate(0deg);
+        opacity: 0;
+    }
+    50% { 
+        transform: scale(1.2) rotate(180deg);
+        opacity: 1;
+    }
+    100% { 
+        transform: scale(1) rotate(360deg);
+        opacity: 0.8;
+    }
+}
+
+@keyframes borderGlow {
+    0%, 100% { opacity: 0; }
+    50% { opacity: 0.6; }
+}
+
+.achievement-notification {
+    width: 320px;
+    height: 80px;
+    background: linear-gradient(135deg, 
+        rgba(25, 15, 5, 0.98) 0%,
+        rgba(45, 25, 10, 0.98) 30%,
+        rgba(60, 35, 15, 0.98) 70%,
+        rgba(20, 10, 5, 0.98) 100%
+    );
+    border: 2px solid var(--shop-accent-gold);
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.4),
+                inset 0 0 15px rgba(255, 215, 0, 0.1),
+                0 4px 15px rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    gap: 14px;
+    position: relative;
+    opacity: 0;
+    transform: translateX(120%) scale(0.8);
+    transition: all 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+    overflow: hidden;
+    border-radius: 10px;
+    backdrop-filter: blur(6px);
+}
+
+.achievement-notification::before {
     content: '';
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(90deg, 
-        transparent 0%, 
-        rgba(255, 255, 255, 0.3) 50%, 
-        transparent 100%
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(45deg, 
+        var(--shop-accent-gold), 
+        var(--shop-accent-orange), 
+        var(--shop-accent-gold), 
+        var(--shop-accent-orange)
     );
-    animation: progressShine 2s linear infinite;
+    z-index: -1;
+    border-radius: 12px;
+    opacity: 0;
+    animation: borderGlow 3s ease-in-out infinite;
 }
 
-@keyframes progressShine {
-    0% { transform: translateX(-100%); }
-    100% { transform: translateX(100%); }
+.achievement-notification::after {
+    content: '★';
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    font-size: 1.5em;
+    color: var(--shop-accent-gold);
+    text-shadow: 0 0 10px var(--shop-accent-gold);
+    animation: starBurst 0.8s ease-out;
+    z-index: 10;
 }
 
-/* Power-up type specific colors */
-.powerup-notification.shield {
-    border-color: #00ffff;
-    box-shadow: 
-        0 0 25px #00ffff,
-        inset 0 0 20px rgba(0, 255, 255, 0.1),
-        0 0 0 3px #000;
+.achievement-notification.show {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+    animation: achievementGlow 3s ease-in-out infinite;
 }
 
-.powerup-notification.shield .powerup-name {
-    color: #00ffff;
-    text-shadow: 2px 2px #000, 0 0 8px #00ffff;
+.achievement-notification .achievement-progress-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    background: linear-gradient(90deg, 
+        var(--shop-accent-gold) 0%, 
+        var(--shop-accent-orange) 50%, 
+        var(--shop-accent-gold) 100%
+    );
+    animation: achievement-progress 5s linear forwards;
+    box-shadow: 0 0 8px rgba(255, 215, 0, 0.6);
+    border-radius: 0 0 8px 8px;
 }
 
-.powerup-notification.fireRate {
-    border-color: #ff6600;
-    box-shadow: 
-        0 0 25px #ff6600,
-        inset 0 0 20px rgba(255, 102, 0, 0.1),
-        0 0 0 3px #000;
+.achievement-icon-container {
+    background: linear-gradient(135deg, 
+        rgba(0, 0, 0, 0.8), 
+        rgba(40, 20, 10, 0.6)
+    );
+    padding: 8px;
+    border: 2px solid var(--shop-accent-gold);
+    border-radius: 8px;
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 0 12px rgba(255, 215, 0, 0.4);
 }
 
-.powerup-notification.fireRate .powerup-name {
-    color: #ff6600;
-    text-shadow: 2px 2px #000, 0 0 8px #ff6600;
+.achievement-icon-container::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(45deg, 
+        transparent 30%, 
+        rgba(255, 215, 0, 0.3) 50%, 
+        transparent 70%
+    );
+    animation: iconShimmer 2.5s ease-in-out infinite;
 }
 
-.powerup-notification.bomb {
-    border-color: #ff3333;
-    box-shadow: 
-        0 0 25px #ff3333,
-        inset 0 0 20px rgba(255, 51, 51, 0.1),
-        0 0 0 3px #000;
+.achievement-icon {
+    width: 48px;
+    height: 48px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    image-rendering: pixelated;
+    background-color: transparent;
+    border-radius: 4px;
 }
 
-.powerup-notification.bomb .powerup-name {
-    color: #ff3333;
-    text-shadow: 2px 2px #000, 0 0 8px #ff3333;
+.achievement-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
 }
 
-.powerup-notification.heal {
-    border-color: #ff69b4;
-    box-shadow: 
-        0 0 25px #ff69b4,
-        inset 0 0 20px rgba(255, 105, 180, 0.1),
-        0 0 0 3px #000;
+.achievement-unlock-text {
+    color: var(--shop-accent-orange);
+    font-size: 0.65em;
+    text-transform: uppercase;
+    margin: 0;
+    text-shadow: 1px 1px 0 #000, 0 0 4px var(--shop-accent-orange);
+    letter-spacing: 1px;
 }
 
-.powerup-notification.heal .powerup-name {
-    color: #ff69b4;
-    text-shadow: 2px 2px #000, 0 0 8px #ff69b4;
-}
-
-.powerup-notification.slowEnemies {
-    border-color: #4169e1;
-    box-shadow: 
-        0 0 25px #4169e1,
-        inset 0 0 20px rgba(65, 105, 225, 0.1),
-        0 0 0 3px #000;
-}
-
-.powerup-notification.slowEnemies .powerup-name {
-    color: #4169e1;
-    text-shadow: 2px 2px #000, 0 0 8px #4169e1;
-}
-
-.powerup-notification.money {
-    border-color: #ffd700;
-    box-shadow: 
-        0 0 25px #ffd700,
-        inset 0 0 20px rgba(255, 215, 0, 0.1),
-        0 0 0 3px #000;
-}
-
-.powerup-notification.money .powerup-name {
-    color: #ffd700;
-    text-shadow: 2px 2px #000, 0 0 8px #ffd700;
-}
-
-/* Instant power-up notification styles */
-.powerup-notification.instant {
-    height: 70px;
-    animation: instantPowerupGlow 1.5s ease-in-out infinite alternate;
-}
-
-.powerup-notification.instant .powerup-timer {
-    color: var(--retro-neon-green);
+.achievement-title {
+    color: var(--shop-accent-gold);
     font-size: 0.9em;
-    text-shadow: 2px 2px #000, 0 0 10px var(--retro-neon-green);
-    animation: instantPulse 1s ease-in-out infinite alternate;
+    text-shadow: 
+        1px 1px 0 #000, 
+        0 0 10px var(--shop-accent-gold);
+    margin: 0;
+    line-height: 1.1;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
-@keyframes instantPowerupGlow {
-    0% { 
-        box-shadow: 
-            0 0 25px var(--retro-neon-blue),
-            inset 0 0 20px rgba(0, 255, 255, 0.1),
-            0 0 0 3px #000;
-    }
-    100% { 
-        box-shadow: 
-            0 0 40px var(--retro-neon-blue),
-            inset 0 0 30px rgba(0, 255, 255, 0.3),
-            0 0 0 3px #000;
-    }
+.achievement-desc {
+    color: #e8d4a0;
+    font-size: 0.7em;
+    text-shadow: 1px 1px 0 #000;
+    margin: 0;
+    line-height: 1.3;
+    opacity: 0.9;
 }
 
-@keyframes instantPulse {
-    0% { 
-        text-shadow: 2px 2px #000, 0 0 10px var(--retro-neon-green);
-        transform: scale(1);
-    }
-    100% { 
-        text-shadow: 2px 2px #000, 0 0 15px var(--retro-neon-green);
-        transform: scale(1.05);
-    }
-}
-
-/* Remove old powerup indicator styles */
-.powerup-indicator {
-    display: none;
-}
-
-.powerup-indicator .timer-bar {
-    display: none;
-}
-
+/* --- UI & MENUS --- */
 .game-ui {
     position: absolute;
     top: 50%;

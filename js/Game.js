@@ -7,6 +7,7 @@ import { Enemy } from './classes/Enemy.js';
 import { PowerUp } from './classes/PowerUp.js';
 import { Explosion } from './classes/Explosion.js';
 import { Shop } from './classes/Shop.js';
+import { Achievement, AchievementManager } from './classes/Achievement.js';
 
 export class Game {
     constructor() {
@@ -39,6 +40,8 @@ export class Game {
         this.canFireOnKeyPress = true;
 
         this.enemies = [];
+        this.enemiesDefeated = 0; // Achievement tracking
+        this.projectilesFired = 0; // Achievement tracking
         this.lastEnemySpawnTime = 0;
         this.enemySpawnRate = 1.5;
         this.currentEnemySpeedMultiplier = 1;
@@ -195,6 +198,10 @@ export class Game {
         this.isBossPhase = false;
         
         this.shop = new Shop(this);
+
+        // Achievement System
+        this.achievementManager = new AchievementManager(this);
+        this.achievementIndicatorsDiv = document.getElementById('achievementIndicators');
 
         this.mainMenuDiv = document.getElementById('mainMenu');
         this.loadingTextDiv = document.getElementById('loadingText');
@@ -387,6 +394,7 @@ export class Game {
             }
         });
 
+        this.initializeAchievements();
         this.loadAssets();
         this.updateShipStats();
     }
@@ -400,6 +408,18 @@ export class Game {
         this.assetLoader.loadImage('shipyard_console', 'assets/images/sprites/shipyard_console.png');
         this.assetLoader.loadImage('upgrade_terminal', 'assets/images/sprites/upgrade_terminal.png');
         this.assetLoader.loadImage('starmap_table', 'assets/images/sprites/starmap_table.png');
+
+        // Achievement Icons
+        this.assetLoader.loadImage('ach_first_kill', 'assets/images/achievements/ach_first_kill.png');
+        this.assetLoader.loadImage('ach_money', 'assets/images/achievements/ach_money.png');
+        this.assetLoader.loadImage('ach_collector', 'assets/images/achievements/ach_collector.png');
+        this.assetLoader.loadImage('ach_level_up', 'assets/images/achievements/ach_level_up.png');
+        this.assetLoader.loadImage('ach_boss_slayer', 'assets/images/achievements/ach_boss_slayer.png');
+        this.assetLoader.loadImage('ach_trigger_happy', 'assets/images/achievements/ach_trigger_happy.png');
+        this.assetLoader.loadImage('ach_power_up', 'assets/images/achievements/ach_power_up.png');
+        this.assetLoader.loadImage('ach_shopaholic', 'assets/images/achievements/ach_shopaholic.png');
+        this.assetLoader.loadImage('ach_survivor', 'assets/images/achievements/ach_survivor.png');
+        this.assetLoader.loadImage('ach_destroyer', 'assets/images/achievements/ach_destroyer.png');
 
 
         for (let i = 1; i <= 8; i++) {
@@ -432,6 +452,7 @@ export class Game {
         this.assetLoader.loadAudio('menuConfirm', 'assets/audio/Sci-Fi-Interface-Select.mp3');
         this.assetLoader.loadAudio('gameOverSound', 'assets/audio/Retro-Game-Over-2.mp3');
         this.assetLoader.loadAudio('victorySound', 'assets/audio/Video-Game-Win-Level-2.mp3');
+        this.assetLoader.loadAudio('achievementSound', 'assets/audio/achievement.mp3');
 
 
         this.assetLoader.onComplete = () => {
@@ -446,7 +467,7 @@ export class Game {
                 this.bgMusic.volume = this.gameVolume;
             }
 
-            const soundNames = ['shotSound', 'powerUpSound', 'baseHitSound', 'abilitySound', 'menuHover', 'menuClick', 'menuConfirm', 'gameOverSound', 'victorySound'];
+            const soundNames = ['shotSound', 'powerUpSound', 'baseHitSound', 'abilitySound', 'menuHover', 'menuClick', 'menuConfirm', 'gameOverSound', 'victorySound', 'achievementSound'];
             soundNames.forEach(name => {
                 this.sounds[name] = this.assetLoader.getAsset(name);
                 if (this.sounds[name]) this.sounds[name].volume = this.gameVolume;
@@ -554,7 +575,8 @@ export class Game {
             gameVolume: this.gameVolume,
             currentDifficulty: this.currentDifficulty,
             isBossPhase: this.isBossPhase,
-            bossHealth: this.boss ? this.boss.health : null
+            bossHealth: this.boss ? this.boss.health : null,
+            unlockedAchievementIds: Array.from(this.achievementManager.unlockedIds) // Save achievements
         };
         try {
             localStorage.setItem('spaceInvadersGameState', JSON.stringify(gameState));
@@ -581,6 +603,11 @@ export class Game {
                 this.ownedShips = gameState.ownedShips || ['ship1'];
                 this.shipUpgrades = gameState.shipUpgrades || { 'ship1': { damage: 0, fireRate: 0, health: 0, speed: 0 } };
                 
+                // Load achievements
+                if (gameState.unlockedAchievementIds) {
+                    this.achievementManager.loadUnlocked(new Set(gameState.unlockedAchievementIds));
+                }
+
                 this.updateShipStats();
 
                 if (this.toggleSoundBtn) this.toggleSoundBtn.textContent = `TOGGLE SOUND (${this.soundEnabled ? 'ON' : 'OFF'})`;
@@ -914,6 +941,15 @@ export class Game {
     update(deltaTime) {
         if (this.currentState === GAME_STATES.SHOP) return;
 
+        // Check for achievements
+        const unlockedAchievements = this.achievementManager.checkAll();
+        if (unlockedAchievements.length > 0) {
+            unlockedAchievements.forEach(ach => {
+                this.displayAchievementNotification(ach);
+            });
+            this.saveGame(); // Save progress when an achievement is unlocked
+        }
+
         for (const abilityName in this.shipAbilityCooldowns) {
             this.shipAbilityCooldowns[abilityName] -= deltaTime;
             if (this.shipAbilityCooldowns[abilityName] <= 0) delete this.shipAbilityCooldowns[abilityName];
@@ -988,6 +1024,7 @@ export class Game {
                     enemy.health -= projectile.damage;
                     if (enemy.health <= 0) {
                         enemy.active = false;
+                        this.enemiesDefeated++; // Achievement tracking
                         const difficulty = this.difficultySettings[this.currentDifficulty];
                         this.score += Math.round(10 * difficulty.scoreRate);
                         this.money += Math.round(5 * difficulty.moneyRate);
@@ -1443,6 +1480,7 @@ export class Game {
                 const currentTime = performance.now() / 1000;
                 if (currentTime - this.lastShotTime >= this.currentShipStats.fireRate) {
                     this.player.fire();
+                    this.projectilesFired += this.currentShipStats.numProjectiles; // Achievement tracking
                     this.playSound('shotSound');
                     this.lastShotTime = currentTime;
                     this.canFireOnKeyPress = false;
@@ -1511,8 +1549,21 @@ export class Game {
 
     resetGame(clearSave = false, keepPlayerState = false) {
         this.score = 0;
-        this.money = 0;
-        this.experience = 0;
+        this.enemiesDefeated = 0;
+        this.projectilesFired = 0;
+
+        if (!keepPlayerState) {
+            this.money = 0;
+            this.experience = 0;
+            this.currentShipType = 'ship1';
+            this.ownedShips = ['ship1'];
+            this.shipUpgrades = {
+                'ship1': { damage: 0, fireRate: 0, health: 0, speed: 0 }
+            };
+            this.completedLevels = [];
+            this.achievementManager.reset();
+        }
+        
         this.playerHealth = 100;
         this.projectiles = [];
         this.enemyProjectiles = [];
@@ -1530,14 +1581,6 @@ export class Game {
         this.boss = null;
         this.isBossPhase = false;
 
-        if (!keepPlayerState) {
-            this.currentShipType = 'ship1';
-            this.ownedShips = ['ship1'];
-            this.shipUpgrades = {
-                'ship1': { damage: 0, fireRate: 0, health: 0, speed: 0 }
-            };
-            this.completedLevels = [];
-        }
         this.shipAbilityCooldowns = {};
         this.activeShipAbilities = {};
         this.updateShipStats();
@@ -1549,6 +1592,7 @@ export class Game {
         }
         if (clearSave) {
             localStorage.removeItem('spaceInvadersGameState');
+            this.achievementManager.reset();
         }
         this.updateMainMenuButtons();
     }
@@ -2059,6 +2103,7 @@ export class Game {
             const distance = Math.sqrt(Math.pow(x - enemyCenterX, 2) + Math.pow(y - enemyCenterY, 2));
             if (distance <= bombRadius) {
                 enemy.active = false;
+                this.enemiesDefeated++;
                 const difficulty = this.difficultySettings[this.currentDifficulty];
                 this.score += Math.round(10 * difficulty.scoreRate);
                 this.money += Math.round(5 * difficulty.moneyRate);
@@ -2078,5 +2123,104 @@ export class Game {
             }
         }
         this.holdingBombPowerUp = false;
+    }
+
+    // --- ACHIEVEMENT METHODS ---
+
+    initializeAchievements() {
+        this.achievementManager.addAchievement(new Achievement({
+            id: 'first_kill', name: 'First Contact', description: 'Defeat your first enemy.', icon: 'ach_first_kill',
+            conditionFn: (game) => game.enemiesDefeated >= 1
+        }));
+        this.achievementManager.addAchievement(new Achievement({
+            id: 'destroyer_100', name: 'Destroyer', description: 'Defeat 100 enemies.', icon: 'ach_destroyer',
+            conditionFn: (game) => game.enemiesDefeated >= 100
+        }));
+        this.achievementManager.addAchievement(new Achievement({
+            id: 'moneybags_1k', name: 'Moneybags', description: 'Accumulate 1000 credits in one run.', icon: 'ach_money',
+            conditionFn: (game) => game.money >= 1000
+        }));
+        this.achievementManager.addAchievement(new Achievement({
+            id: 'collector_3', name: 'Collector', description: 'Own 3 different ships.', icon: 'ach_collector',
+            conditionFn: (game) => game.ownedShips.length >= 3
+        }));
+        this.achievementManager.addAchievement(new Achievement({
+            id: 'level_1_clear', name: 'Getting Started', description: 'Complete Level 1.', icon: 'ach_level_up',
+            conditionFn: (game) => game.completedLevels.includes(1)
+        }));
+        this.achievementManager.addAchievement(new Achievement({
+            id: 'boss_slayer_1', name: 'Boss Slayer', description: 'Defeat the first boss.', icon: 'ach_boss_slayer',
+            conditionFn: (game) => game.completedLevels.includes(1) && game.boss === null
+        }));
+        this.achievementManager.addAchievement(new Achievement({
+            id: 'trigger_happy_500', name: 'Trigger Happy', description: 'Fire 500 projectiles.', icon: 'ach_trigger_happy',
+            conditionFn: (game) => game.projectilesFired >= 500
+        }));
+        this.achievementManager.addAchievement(new Achievement({
+            id: 'power_up_3', name: 'Power Overwhelming', description: 'Have 3 power-ups active at once.', icon: 'ach_power_up',
+            conditionFn: (game) => Object.keys(game.activePowerUpEffects).length >= 3
+        }));
+        this.achievementManager.addAchievement(new Achievement({
+            id: 'shopaholic_500', name: 'Shopaholic', description: 'Spend 500 credits at the shop.', icon: 'ach_shopaholic',
+            conditionFn: (game) => {
+                // This requires tracking spending. For now, we'll tie it to upgrades.
+                // A better implementation would track total spending.
+                let totalSpent = 0;
+                for (const shipType in game.shipUpgrades) {
+                    const upgrades = game.shipUpgrades[shipType];
+                    const config = game.shipConfigs[shipType];
+                    for (const upgradeType in upgrades) {
+                        const level = upgrades[upgradeType];
+                        if (level > 0) {
+                            totalSpent += config.upgrades[upgradeType].costs.slice(0, level).reduce((a, b) => a + b, 0);
+                        }
+                    }
+                }
+                return totalSpent >= 500;
+            }
+        }));
+    }
+
+    /**
+     * Creates and displays an achievement notification.
+     * @param {Achievement} achievement - The achievement that was just unlocked.
+     */
+    displayAchievementNotification(achievement) {
+        if (!this.achievementIndicatorsDiv) return;
+
+        this.playSound('achievementSound');
+
+        const notification = document.createElement('div');
+        notification.className = 'achievement-notification';
+
+        const iconAsset = this.assetLoader.getAsset(achievement.icon);
+        const iconUrl = iconAsset ? iconAsset.src : '';
+
+        notification.innerHTML = `
+            <div class="achievement-icon-container">
+                <div class="achievement-icon" style="background-image: url('${iconUrl}')"></div>
+            </div>
+            <div class="achievement-content">
+                <p class="achievement-unlock-text">Achievement Unlocked!</p>
+                <p class="achievement-title">${achievement.name}</p>
+                <p class="achievement-desc">${achievement.description}</p>
+            </div>
+            <div class="achievement-progress-bar"></div>
+        `;
+
+        this.achievementIndicatorsDiv.appendChild(notification);
+
+        requestAnimationFrame(() => {
+            notification.classList.add('show');
+        });
+
+        const displayDuration = 5000; // 5 seconds
+
+        setTimeout(() => {
+            notification.classList.remove('show');
+            setTimeout(() => {
+                notification.remove();
+            }, 500); // Match CSS transition
+        }, displayDuration);
     }
 }
