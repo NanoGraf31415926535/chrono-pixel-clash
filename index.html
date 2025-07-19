@@ -10,6 +10,9 @@
     <div id="gameContainer">
         <canvas id="gameCanvas" width="640" height="480"></canvas>
 
+        <!-- FEATURE: Added container for power-up indicators -->
+        <div id="powerUpIndicators"></div>
+
         <div id="loadingText" class="game-ui">
             <p>Loading Assets: <span id="assetProgress">0/0</span></p>
         </div>
@@ -50,7 +53,6 @@
             <button id="backToMainFromCreditsBtn" class="menu-button">BACK TO MAIN MENU</button>
         </div>
 
-        <!-- NEW: Shop Hangar UI -->
         <div id="shopHangar" class="game-ui" style="display: none;">
             <div id="interactionPrompt"></div>
             
@@ -60,12 +62,17 @@
                 <div id="shipPurchaseColumn" class="shop-column">
                     <!-- Ship buttons will be dynamically added here -->
                 </div>
-                <div class="shop-info-column">
-                    <p>Current Ship: <span id="currentShipTypeDisplay">Ship 1</span></p>
-                    <p>Ability: <span id="currentShipAbilityName">None</span></p>
-                    <p>Description: <span id="currentShipAbilityDescription">No special ability.</span></p>
+                <div id="shipPreviewPanel">
+                    <img id="shipPreviewImage" src="assets/images/Starships/Ship_1.png" alt="Ship Preview">
+                    <h3 id="shipPreviewName">Ship 1</h3>
+                    <ul id="shipPreviewStats">
+                        <!-- Stats will be dynamically added here -->
+                    </ul>
+                    <div id="shipPreviewAbility">
+                        <!-- Ability info will be dynamically added here -->
+                    </div>
                 </div>
-                <button id="closeShipyardBtn" class="menu-button">Close</button>
+                <button id="closeShipyardBtn" class="shop-close-button">Close</button>
             </div>
 
             <div id="upgradeMenu" class="shop-sub-menu">
@@ -75,18 +82,23 @@
                 <div id="shipUpgradeColumn" class="shop-column">
                     <!-- Upgrade buttons will be dynamically added here -->
                 </div>
-                <button id="closeUpgradeBtn" class="menu-button">Close</button>
+                <button id="closeUpgradeBtn" class="shop-close-button">Close</button>
             </div>
         </div>
 
 
-        <div id="levelMapScreen" class="game-ui" style="display: none;">
-            <h2>SELECT LEVEL</h2>
-            <div id="levelButtonsContainer" class="level-map-grid">
-                <!-- Level buttons will be dynamically added here by Game.js -->
+        <div id="levelMapScreen" style="display: none;">
+            <div class="level-map-content">
+                <h2>SELECT LEVEL</h2>
+                <div id="levelButtonsContainer" class="level-map-grid">
+                    <!-- Level buttons will be dynamically added here by Game.js -->
+                </div>
+                <p id="levelPlotDisplay" style="margin-top: 20px; text-align: center; max-width: 80%; margin-left: auto; margin-right: auto;"></p>
+                <div class="level-map-buttons-container">
+                    <button id="backToShopBtn" class="menu-button" style="display: none;">RETURN TO HANGAR</button>
+                    <button id="levelMapBackToMainBtn" class="menu-button">BACK TO MAIN MENU</button>
+                </div>
             </div>
-            <p id="levelPlotDisplay" style="margin-top: 20px; text-align: center; max-width: 80%; margin-left: auto; margin-right: auto;"></p>
-            <button id="levelMapBackToMainBtn" class="menu-button">BACK TO MAIN MENU</button>
         </div>
 
         <div id="gameOverScreen" class="game-ui" style="display: none;">
@@ -103,7 +115,6 @@
             <button id="victoryBackToMainBtn" class="menu-button">BACK TO MAIN MENU</button>
         </div>
 
-        <!-- Commander Tutorial Popup (text only) -->
         <div id="commanderPopup" class="commander-popup" style="display: none;">
             <div class="commander-message">
                 <span id="commanderText"></span><span class="commander-cursor">|</span>

@@ -1,19 +1,19 @@
 export class Projectile {
-    constructor(x, y, width, height, speed, direction, color = 'yellow', damage = 1, type = 'player', velocity = {x: 0, y: 0}, duration = null) {
+    constructor(x, y, width, height, speed, direction, color = 'yellow', damage = 1, type = 'player', velocity = {x: 0, y: 0}, duration = null, owner = null) {
         this.x = x;
         this.y = y;
         this.width = width;
         this.height = height;
         this.speed = speed;
-        this.direction = direction; // 'up' or 'down' for player, unused for boss
+        this.direction = direction;
         this.color = color;
         this.damage = damage;
         this.active = true;
-        this.type = type; // 'player' or 'boss'
-        this.duration = duration; // How long the projectile lasts in seconds
+        this.type = type;
+        this.duration = duration;
         this.lifeTimer = 0;
-        
-        // If a velocity object is provided, use it. Otherwise, calculate based on direction.
+        this.owner = owner;
+
         if (velocity.x !== 0 || velocity.y !== 0) {
             this.velocity = velocity;
         } else {
@@ -22,30 +22,41 @@ export class Projectile {
                 y: direction === 'up' ? -this.speed : this.speed
             };
         }
-        // Charge beam animation state
-        this.isChargeBeam = (color === 'rgba(255, 0, 255, 0.7)' && width > 100 && height > 1000);
-        this.chargePhase = this.isChargeBeam ? 'charging' : null; // 'charging', 'firing', 'fading'
+        
+        this.isChargeBeam = (this.type === 'boss' && this.owner !== null && this.color.includes('rgba(255, 0, 255'));
+        this.chargePhase = this.isChargeBeam ? 'charging' : null;
         this.chargeTimer = 0;
+        
+        // FEATURE: Added properties for special projectile types for visual effects
+        this.isWarpTrail = this.type === 'warpTrail';
+        this.isPlasmaBurst = this.type === 'plasmaBurst';
     }
 
     update(deltaTime, canvas) {
-        // Universal movement based on velocity
-        this.x += this.velocity.x * deltaTime;
-        this.y += this.velocity.y * deltaTime;
+        if (this.isChargeBeam && this.owner) {
+            if (!this.owner.active) {
+                this.active = false;
+                return;
+            }
+            this.x = this.owner.x;
+            this.y = this.owner.y + this.owner.height;
+            this.width = this.owner.width;
+            this.height = canvas.height - this.y;
+        } else {
+            this.x += this.velocity.x * deltaTime;
+            this.y += this.velocity.y * deltaTime;
+        }
 
-        // Deactivate projectile if it goes off-screen
-        if (this.y + this.height < 0 || this.y > canvas.height || this.x + this.width < 0 || this.x > canvas.width) {
+        if (!this.owner && (this.y + this.height < 0 || this.y > canvas.height || this.x + this.width < 0 || this.x > canvas.width)) {
             this.active = false;
         }
 
-        // Charge beam animation logic
         if (this.isChargeBeam) {
             this.chargeTimer += deltaTime;
-            // Charging phase: 0.5s
             if (this.chargePhase === 'charging' && this.chargeTimer >= 0.5) {
                 this.chargePhase = 'firing';
                 this.chargeTimer = 0;
-            } else if (this.chargePhase === 'firing' && this.chargeTimer >= (this.duration ? this.duration - 0.7 : 0.5)) {
+            } else if (this.chargePhase === 'firing' && this.chargeTimer >= 0.7) {
                 this.chargePhase = 'fading';
                 this.chargeTimer = 0;
             } else if (this.chargePhase === 'fading' && this.chargeTimer >= 0.2) {
@@ -53,8 +64,7 @@ export class Projectile {
             }
         }
 
-        // Deactivate projectile if its duration has expired (for non-chargeBeam)
-        if (!this.isChargeBeam && this.duration !== null) {
+        if (this.duration !== null) {
             this.lifeTimer += deltaTime;
             if (this.lifeTimer >= this.duration) {
                 this.active = false;
@@ -64,22 +74,21 @@ export class Projectile {
 
     draw(ctx) {
         if (!this.active) return;
+
+        // FEATURE: Custom draw logic for special projectile types
         if (this.isChargeBeam) {
-            // Animate charge beam
-            let alpha = 0.7;
-            let glow = 30;
+            let alpha = 0.85;
+            let glow = 40;
             let beamWidth = this.width;
             if (this.chargePhase === 'charging') {
-                // Grow/fade in
                 const t = Math.min(1, this.chargeTimer / 0.5);
-                alpha = 0.2 + 0.5 * t;
-                glow = 10 + 40 * t;
+                alpha = 0.2 + 0.65 * t;
+                glow = 10 + 50 * t;
                 beamWidth = this.width * (0.5 + 0.5 * t);
             } else if (this.chargePhase === 'fading') {
-                // Fade out
                 const t = 1 - Math.min(1, this.chargeTimer / 0.2);
-                alpha = 0.7 * t;
-                glow = 30 * t;
+                alpha = 0.85 * t;
+                glow = 40 * t;
                 beamWidth = this.width * (0.8 + 0.2 * t);
             }
             ctx.save();
@@ -88,6 +97,27 @@ export class Projectile {
             ctx.shadowBlur = glow;
             ctx.fillStyle = 'rgba(255,0,255,1)';
             ctx.fillRect(this.x + (this.width - beamWidth) / 2, this.y, beamWidth, this.height);
+            ctx.restore();
+        } else if (this.isPlasmaBurst) {
+            ctx.save();
+            const time = performance.now();
+            const pulse = 0.9 + 0.1 * Math.sin(time / 100);
+            const grad = ctx.createRadialGradient(this.x + this.width/2, this.y + this.height/2, 0, this.x + this.width/2, this.y + this.height/2, this.width/2 * pulse);
+            grad.addColorStop(0, 'rgba(255, 255, 100, 1)');
+            grad.addColorStop(0.5, 'rgba(255, 165, 0, 0.8)');
+            grad.addColorStop(1, 'rgba(255, 100, 0, 0)');
+            ctx.fillStyle = grad;
+            ctx.shadowColor = 'orange';
+            ctx.shadowBlur = 20;
+            ctx.fillRect(this.x, this.y, this.width, this.height);
+            ctx.restore();
+        } else if (this.isWarpTrail) {
+            ctx.save();
+            const fade = 1 - (this.lifeTimer / this.duration);
+            ctx.globalAlpha = fade * 0.7;
+            ctx.fillStyle = this.color;
+            ctx.filter = `blur(${ (1 - fade) * 10 }px)`;
+            ctx.fillRect(this.x, this.y, this.width, this.height);
             ctx.restore();
         } else {
             ctx.fillStyle = this.color;

@@ -2,30 +2,25 @@
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
 :root {
-    /* Define a retro color palette using CSS variables */
-    --retro-dark-bg: #110022; /* Even deeper space violet/blue */
-    --retro-medium-bg: #330066; /* Slightly lighter violet for contrast */
-    --retro-neon-blue: #00ffff; /* Cyan for highlights */
-    --retro-neon-pink: #ff00ff; /* Magenta for accents */
-    --retro-neon-green: #00ff00; /* Bright green for success/info */
-    --retro-text-color: #fff; /* White for main text */
-    --retro-border-color: #00ffff; /* Cyan border */
-    --retro-button-bg: #007bff; /* Original blue for buttons */
-    --retro-button-hover: #0056b3; /* Darker blue for hover */
-
-    /* New colors to match the image more closely */
-    --image-bg-purple: #221144; /* A dark purple from the image */
-    --image-menu-text-color: #ffcc00; /* Golden yellow for menu text */
-    --image-title-outline: #552200; /* Dark brown/orange for title outline effect */
-    
-    /* Enhanced shop colors for nostalgic feel */
-    --shop-bg-dark: #0a0a1a; /* Deep space black */
-    --shop-bg-medium: #1a1a3a; /* Dark purple-blue */
-    --shop-accent-gold: #ffd700; /* Bright gold */
-    --shop-accent-orange: #ff6600; /* Warm orange */
-    --shop-accent-red: #ff3333; /* Danger red */
-    --shop-glow-blue: #4444ff; /* Soft blue glow */
-    --shop-glow-purple: #8844ff; /* Purple glow */
+    --retro-dark-bg: #110022;
+    --retro-medium-bg: #330066;
+    --retro-neon-blue: #00ffff;
+    --retro-neon-pink: #ff00ff;
+    --retro-neon-green: #39FF14; /* Brighter neon green */
+    --retro-text-color: #fff;
+    --retro-border-color: #00ffff;
+    --retro-button-bg: #007bff;
+    --retro-button-hover: #0056b3;
+    --image-bg-purple: #221144;
+    --image-menu-text-color: #ffcc00;
+    --image-title-outline: #552200;
+    --shop-bg-dark: #0a0a1a;
+    --shop-bg-medium: #1a1a3a;
+    --shop-accent-gold: #ffd700;
+    --shop-accent-orange: #ff6600;
+    --shop-accent-red: #ff3333;
+    --shop-glow-blue: #4444ff;
+    --shop-glow-purple: #8844ff;
 }
 
 body {
@@ -33,16 +28,37 @@ body {
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    background-color: var(--image-bg-purple); /* Use the image's background color */
+    background-color: var(--image-bg-purple);
     margin: 0;
-    overflow: hidden; /* Prevent scrollbars */
-    font-family: 'Press Start 2P', monospace; /* Apply pixel font globally */
+    overflow: hidden;
+    font-family: 'Press Start 2P', monospace;
     color: var(--retro-text-color);
-    text-shadow: 3px 3px #000; /* Simple black shadow for general text */
-    user-select: none; /* Prevent text selection */
+    text-shadow: 2px 2px #000;
+    user-select: none;
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
+}
+
+#gameContainer::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: linear-gradient(rgba(0,0,0,0) 50%, rgba(0,0,0,0.25) 50%), linear-gradient(90deg, rgba(255,0,0,0.06), rgba(0,255,0,0.02), rgba(0,0,255,0.06));
+    background-size: 100% 4px, 3px 100%;
+    z-index: 1;
+    pointer-events: none;
+    animation: flicker 0.15s infinite;
+}
+
+@keyframes flicker {
+  0% { opacity: 0.2; }
+  20% { opacity: 1; }
+  80% { opacity: 0.5; }
+  100% { opacity: 1; }
 }
 
 #gameContainer {
@@ -64,6 +80,292 @@ canvas {
     image-rendering: -moz-crisp-edges;
     image-rendering: -webkit-crisp-edges;
     image-rendering: crisp-edges;
+    z-index: 5;
+}
+
+/* FEATURE: New popup power-up notification system */
+#powerUpIndicators {
+    position: fixed;
+    top: 50%;
+    right: 20px; /* Position on the right side of screen */
+    transform: translateY(-50%);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    pointer-events: none;
+}
+
+.powerup-notification {
+    width: 320px;
+    height: 80px;
+    background: linear-gradient(145deg, 
+        rgba(20, 10, 50, 0.95), 
+        rgba(40, 20, 80, 0.95)
+    );
+    border: 3px solid var(--retro-neon-blue);
+    box-shadow: 
+        0 0 25px var(--retro-neon-blue),
+        inset 0 0 20px rgba(0, 255, 255, 0.1),
+        0 0 0 3px #000;
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    gap: 15px;
+    position: relative;
+    transform: translateX(400px); /* Start off-screen to the right */
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    animation: powerupGlow 2s ease-in-out infinite alternate;
+    backdrop-filter: blur(5px);
+}
+
+.powerup-notification.show {
+    transform: translateX(0); /* Slide to visible position */
+}
+
+.powerup-notification.hide {
+    transform: translateX(400px); /* Slide back off-screen */
+}
+
+@keyframes powerupGlow {
+    0% { 
+        box-shadow: 
+            0 0 25px var(--retro-neon-blue),
+            inset 0 0 20px rgba(0, 255, 255, 0.1),
+            0 0 0 3px #000;
+    }
+    100% { 
+        box-shadow: 
+            0 0 35px var(--retro-neon-blue),
+            inset 0 0 30px rgba(0, 255, 255, 0.2),
+            0 0 0 3px #000;
+    }
+}
+
+.powerup-icon {
+    width: 56px;
+    height: 56px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    border: 2px solid var(--retro-neon-blue);
+    box-shadow: 0 0 15px var(--retro-neon-blue);
+    image-rendering: pixelated;
+    flex-shrink: 0;
+    position: relative;
+}
+
+.powerup-icon::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(45deg, 
+        transparent 30%, 
+        rgba(0, 255, 255, 0.3) 50%, 
+        transparent 70%
+    );
+    animation: iconShine 3s linear infinite;
+    pointer-events: none;
+}
+
+@keyframes iconShine {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+.powerup-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 8px;
+}
+
+.powerup-name {
+    color: var(--retro-neon-blue);
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.9em;
+    text-shadow: 2px 2px #000, 0 0 8px var(--retro-neon-blue);
+    text-transform: uppercase;
+    margin: 0;
+    line-height: 1.2;
+}
+
+.powerup-timer {
+    color: var(--retro-neon-green);
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.8em;
+    text-shadow: 2px 2px #000, 0 0 8px var(--retro-neon-green);
+    margin: 0;
+}
+
+.powerup-progress {
+    width: 100%;
+    height: 6px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid var(--retro-neon-blue);
+    position: relative;
+    overflow: hidden;
+}
+
+.powerup-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, 
+        var(--retro-neon-green), 
+        var(--retro-neon-blue)
+    );
+    transition: width 0.1s linear;
+    position: relative;
+}
+
+.powerup-progress-bar::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, 
+        transparent 0%, 
+        rgba(255, 255, 255, 0.3) 50%, 
+        transparent 100%
+    );
+    animation: progressShine 2s linear infinite;
+}
+
+@keyframes progressShine {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+/* Power-up type specific colors */
+.powerup-notification.shield {
+    border-color: #00ffff;
+    box-shadow: 
+        0 0 25px #00ffff,
+        inset 0 0 20px rgba(0, 255, 255, 0.1),
+        0 0 0 3px #000;
+}
+
+.powerup-notification.shield .powerup-name {
+    color: #00ffff;
+    text-shadow: 2px 2px #000, 0 0 8px #00ffff;
+}
+
+.powerup-notification.fireRate {
+    border-color: #ff6600;
+    box-shadow: 
+        0 0 25px #ff6600,
+        inset 0 0 20px rgba(255, 102, 0, 0.1),
+        0 0 0 3px #000;
+}
+
+.powerup-notification.fireRate .powerup-name {
+    color: #ff6600;
+    text-shadow: 2px 2px #000, 0 0 8px #ff6600;
+}
+
+.powerup-notification.bomb {
+    border-color: #ff3333;
+    box-shadow: 
+        0 0 25px #ff3333,
+        inset 0 0 20px rgba(255, 51, 51, 0.1),
+        0 0 0 3px #000;
+}
+
+.powerup-notification.bomb .powerup-name {
+    color: #ff3333;
+    text-shadow: 2px 2px #000, 0 0 8px #ff3333;
+}
+
+.powerup-notification.heal {
+    border-color: #ff69b4;
+    box-shadow: 
+        0 0 25px #ff69b4,
+        inset 0 0 20px rgba(255, 105, 180, 0.1),
+        0 0 0 3px #000;
+}
+
+.powerup-notification.heal .powerup-name {
+    color: #ff69b4;
+    text-shadow: 2px 2px #000, 0 0 8px #ff69b4;
+}
+
+.powerup-notification.slowEnemies {
+    border-color: #4169e1;
+    box-shadow: 
+        0 0 25px #4169e1,
+        inset 0 0 20px rgba(65, 105, 225, 0.1),
+        0 0 0 3px #000;
+}
+
+.powerup-notification.slowEnemies .powerup-name {
+    color: #4169e1;
+    text-shadow: 2px 2px #000, 0 0 8px #4169e1;
+}
+
+.powerup-notification.money {
+    border-color: #ffd700;
+    box-shadow: 
+        0 0 25px #ffd700,
+        inset 0 0 20px rgba(255, 215, 0, 0.1),
+        0 0 0 3px #000;
+}
+
+.powerup-notification.money .powerup-name {
+    color: #ffd700;
+    text-shadow: 2px 2px #000, 0 0 8px #ffd700;
+}
+
+/* Instant power-up notification styles */
+.powerup-notification.instant {
+    height: 70px;
+    animation: instantPowerupGlow 1.5s ease-in-out infinite alternate;
+}
+
+.powerup-notification.instant .powerup-timer {
+    color: var(--retro-neon-green);
+    font-size: 0.9em;
+    text-shadow: 2px 2px #000, 0 0 10px var(--retro-neon-green);
+    animation: instantPulse 1s ease-in-out infinite alternate;
+}
+
+@keyframes instantPowerupGlow {
+    0% { 
+        box-shadow: 
+            0 0 25px var(--retro-neon-blue),
+            inset 0 0 20px rgba(0, 255, 255, 0.1),
+            0 0 0 3px #000;
+    }
+    100% { 
+        box-shadow: 
+            0 0 40px var(--retro-neon-blue),
+            inset 0 0 30px rgba(0, 255, 255, 0.3),
+            0 0 0 3px #000;
+    }
+}
+
+@keyframes instantPulse {
+    0% { 
+        text-shadow: 2px 2px #000, 0 0 10px var(--retro-neon-green);
+        transform: scale(1);
+    }
+    100% { 
+        text-shadow: 2px 2px #000, 0 0 15px var(--retro-neon-green);
+        transform: scale(1.05);
+    }
+}
+
+/* Remove old powerup indicator styles */
+.powerup-indicator {
+    display: none;
+}
+
+.powerup-indicator .timer-bar {
+    display: none;
 }
 
 .game-ui {
@@ -101,6 +403,7 @@ canvas {
     height: auto;
     display: block;
     margin: 0 auto 20px auto;
+    filter: drop-shadow(0 0 15px var(--image-menu-text-color));
 }
 
 .game-ui h2 {
@@ -125,7 +428,6 @@ canvas {
     text-shadow: 2px 2px #000;
 }
 
-/* --- ENHANCED SHOP STYLES --- */
 #shopHangar {
     width: 100%;
     height: 100%;
@@ -139,20 +441,16 @@ canvas {
     background: linear-gradient(145deg, rgba(16, 16, 48, 0.95), rgba(32, 16, 64, 0.95));
     padding: 20px 30px;
     border: 3px solid var(--shop-accent-gold);
-    border-radius: 0;
     color: var(--shop-accent-gold);
     font-size: 1.3em;
     text-shadow: 2px 2px #000;
-    box-shadow: 
-        0 0 30px var(--shop-accent-gold),
-        inset 0 0 20px rgba(255, 215, 0, 0.1),
-        4px 4px 0 rgba(0, 0, 0, 0.8);
+    box-shadow: 0 0 30px var(--shop-accent-gold), inset 0 0 20px rgba(255, 215, 0, 0.1), 0 0 0 3px #000;
     animation: shopPromptGlow 2s ease-in-out infinite alternate;
 }
 
 @keyframes shopPromptGlow {
-    0% { box-shadow: 0 0 30px var(--shop-accent-gold), inset 0 0 20px rgba(255, 215, 0, 0.1), 4px 4px 0 rgba(0, 0, 0, 0.8); }
-    100% { box-shadow: 0 0 50px var(--shop-accent-gold), inset 0 0 30px rgba(255, 215, 0, 0.2), 4px 4px 0 rgba(0, 0, 0, 0.8); }
+    0% { box-shadow: 0 0 30px var(--shop-accent-gold), inset 0 0 20px rgba(255, 215, 0, 0.1), 0 0 0 3px #000; }
+    100% { box-shadow: 0 0 50px var(--shop-accent-gold), inset 0 0 30px rgba(255, 215, 0, 0.2), 0 0 0 3px #000; }
 }
 
 .shop-sub-menu {
@@ -160,30 +458,24 @@ canvas {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 85%;
-    max-width: 800px;
-    background: linear-gradient(145deg, rgba(10, 5, 30, 0.98), rgba(20, 10, 50, 0.98));
-    border: 4px solid var(--shop-glow-purple);
-    border-radius: 0;
+    width: 90vw;
+    max-width: 1000px;
+    max-height: 90vh;
+    background: rgba(10, 5, 30, 0.85);
+    backdrop-filter: blur(5px);
+    border: 3px solid var(--shop-glow-purple);
     box-shadow: 
         0 0 40px var(--shop-glow-purple),
         inset 0 0 30px rgba(136, 68, 255, 0.1),
-        8px 8px 0 rgba(0, 0, 0, 0.8);
+        0 0 0 3px #000;
     padding: 30px;
     display: none;
-    backdrop-filter: blur(2px);
     animation: shopMenuAppear 0.3s ease-out;
 }
 
 @keyframes shopMenuAppear {
-    0% { 
-        opacity: 0; 
-        transform: translate(-50%, -50%) scale(0.8);
-    }
-    100% { 
-        opacity: 1; 
-        transform: translate(-50%, -50%) scale(1);
-    }
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+    100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 }
 
 .shop-sub-menu h2 {
@@ -191,129 +483,29 @@ canvas {
     font-size: 2em;
     text-align: center;
     margin-bottom: 25px;
-    text-shadow: 
-        2px 2px 0 #000,
-        4px 4px 0 rgba(0, 0, 0, 0.5);
+    text-shadow: 2px 2px 0 #000, 4px 4px 0 rgba(0, 0, 0, 0.5);
     text-transform: uppercase;
 }
 
 .shop-column {
-    max-height: 350px;
+    max-height: 50vh;
     overflow-y: auto;
     padding-right: 15px;
-    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.6));
+    background: rgba(0, 0, 0, 0.4);
     border: 2px solid var(--shop-bg-medium);
-    border-radius: 0;
     padding: 15px;
     margin-bottom: 20px;
 }
 
-.shop-column::-webkit-scrollbar {
-    width: 12px;
-}
+.shop-column::-webkit-scrollbar { width: 12px; }
+.shop-column::-webkit-scrollbar-track { background: var(--shop-bg-dark); border: 2px solid var(--shop-bg-medium); }
+.shop-column::-webkit-scrollbar-thumb { background: linear-gradient(145deg, var(--shop-glow-blue), var(--shop-glow-purple)); border: 2px solid var(--shop-bg-dark); }
+.shop-column::-webkit-scrollbar-thumb:hover { background: linear-gradient(145deg, var(--shop-glow-purple), var(--shop-accent-gold)); }
 
-.shop-column::-webkit-scrollbar-track {
-    background: var(--shop-bg-dark);
-    border: 2px solid var(--shop-bg-medium);
-}
-
-.shop-column::-webkit-scrollbar-thumb {
-    background: linear-gradient(145deg, var(--shop-glow-blue), var(--shop-glow-purple));
-    border: 2px solid var(--shop-bg-dark);
-    border-radius: 0;
-}
-
-.shop-column::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(145deg, var(--shop-glow-purple), var(--shop-accent-gold));
-}
-
-.shop-info-column {
-    padding-left: 20px;
-    background: linear-gradient(to right, rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.7));
-    border: 2px solid var(--shop-accent-orange);
-    border-radius: 0;
-    padding: 20px;
-    color: var(--shop-accent-gold);
-    text-shadow: 2px 2px #000;
-}
-
-.shop-info-column h3 {
-    color: var(--shop-accent-orange);
-    margin-bottom: 15px;
-    font-size: 1.3em;
-    text-transform: uppercase;
-}
-
-.shop-info-column p {
-    line-height: 1.6;
-    margin-bottom: 10px;
-    color: var(--retro-text-color);
-}
-
-/* Shop item buttons */
-.shop-item-button {
-    background: linear-gradient(145deg, rgba(0, 50, 100, 0.8), rgba(0, 30, 70, 0.8));
-    color: var(--shop-accent-gold);
-    border: 2px solid var(--shop-glow-blue);
-    border-radius: 0;
-    padding: 15px 20px;
-    margin: 8px 0;
-    font-family: 'Press Start 2P', monospace;
-    font-size: 1em;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: block;
-    width: 100%;
-    text-align: left;
-    text-transform: uppercase;
-    text-shadow: 2px 2px #000;
-    box-shadow: 
-        3px 3px 0 rgba(0, 0, 0, 0.8),
-        inset 0 0 10px rgba(68, 68, 255, 0.2);
-}
-
-.shop-item-button:hover {
-    background: linear-gradient(145deg, rgba(0, 70, 120, 0.9), rgba(0, 50, 90, 0.9));
-    border-color: var(--shop-accent-gold);
-    color: var(--retro-text-color);
-    box-shadow: 
-        0 0 20px var(--shop-accent-gold),
-        3px 3px 0 rgba(0, 0, 0, 0.8),
-        inset 0 0 15px rgba(255, 215, 0, 0.3);
-    transform: translateY(-2px);
-}
-
-.shop-item-button:active {
-    transform: translateY(0);
-    box-shadow: 
-        0 0 15px var(--shop-accent-gold),
-        1px 1px 0 rgba(0, 0, 0, 0.8),
-        inset 0 0 10px rgba(255, 215, 0, 0.2);
-}
-
-.shop-item-button.affordable {
-    border-color: var(--retro-neon-green);
-    color: var(--retro-neon-green);
-}
-
-.shop-item-button.expensive {
-    border-color: var(--shop-accent-red);
-    color: var(--shop-accent-red);
-    opacity: 0.7;
-}
-
-.shop-item-button.owned {
-    background: linear-gradient(145deg, rgba(0, 100, 0, 0.6), rgba(0, 70, 0, 0.6));
-    border-color: var(--retro-neon-green);
-    color: var(--retro-neon-green);
-}
-
-/* Close button styling */
 .shop-close-button {
     background: linear-gradient(145deg, rgba(100, 20, 20, 0.8), rgba(80, 10, 10, 0.8));
     color: var(--shop-accent-red);
     border: 2px solid var(--shop-accent-red);
-    border-radius: 0;
     padding: 12px 25px;
     font-family: 'Press Start 2P', monospace;
     font-size: 1.1em;
@@ -321,32 +513,27 @@ canvas {
     transition: all 0.2s ease;
     text-transform: uppercase;
     text-shadow: 2px 2px #000;
-    box-shadow: 
-        3px 3px 0 rgba(0, 0, 0, 0.8),
-        inset 0 0 10px rgba(255, 51, 51, 0.2);
+    box-shadow: 0 0 0 2px #000, inset 0 0 10px rgba(255, 51, 51, 0.2);
     margin-top: 20px;
 }
 
 .shop-close-button:hover {
     background: linear-gradient(145deg, rgba(120, 30, 30, 0.9), rgba(100, 20, 20, 0.9));
     color: var(--retro-text-color);
-    box-shadow: 
-        0 0 20px var(--shop-accent-red),
-        3px 3px 0 rgba(0, 0, 0, 0.8),
-        inset 0 0 15px rgba(255, 51, 51, 0.3);
+    box-shadow: 0 0 20px var(--shop-accent-red), 0 0 0 2px #000, inset 0 0 15px rgba(255, 51, 51, 0.3);
     transform: translateY(-2px);
 }
 
 #shipyardMenu {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1.5fr;
     gap: 25px;
     align-items: start;
 }
 
-#shipyardMenu h2 {
+#shipyardMenu h2, #shipyardMenu p {
     grid-column: span 2;
-    margin-bottom: 25px;
+    text-align: center;
 }
 
 #shipyardMenu .shop-close-button {
@@ -355,115 +542,66 @@ canvas {
     margin-top: 25px;
 }
 
-/* --- END ENHANCED SHOP STYLES --- */
-
-#levelMapScreen {
-    background: url('../assets/images/backgrounds/Upgrade_menu.JPG') no-repeat center center;
-    background-size: cover;
-    border: none;
-    box-shadow: none;
+#shipPreviewPanel {
+    background: rgba(0,0,0,0.5);
+    border: 2px solid var(--shop-accent-gold);
     padding: 20px;
-    width: 70%;
-    height: 80%;
+    text-align: center;
+    color: var(--retro-text-color);
+    height: 100%;
+    box-sizing: border-box;
+}
+
+#shipPreviewImage {
+    width: 80%;
+    max-width: 250px;
+    height: auto;
+    margin-bottom: 15px;
+    image-rendering: pixelated;
+    filter: drop-shadow(0 0 15px var(--shop-accent-gold));
+}
+
+#shipPreviewName {
+    font-size: 1.5em;
+    color: var(--shop-accent-gold);
+    margin-bottom: 15px;
+}
+
+#shipPreviewStats {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 15px 0;
+    text-align: left;
+    font-size: 0.9em;
+    line-height: 1.8;
+}
+
+#shipPreviewAbility {
+    font-size: 0.9em;
+    line-height: 1.5;
+    background: rgba(0,0,0,0.3);
+    padding: 10px;
+    border-left: 3px solid var(--shop-accent-orange);
+}
+#shipPreviewAbility strong {
+    color: var(--shop-accent-orange);
+}
+
+#upgradeMenu {
+    display: block;
+}
+
+.upgrade-button {
     display: flex;
-    flex-direction: column;
     justify-content: space-between;
     align-items: center;
 }
 
-#levelMapScreen h2 {
-    color: var(--image-menu-text-color);
-    text-shadow: 3px 3px #000;
-    margin-bottom: 20px;
-}
-
-.level-map-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-    gap: 15px;
-    width: 100%;
-    max-width: 800px;
-    margin: 0 auto;
-    overflow-y: auto;
-    padding: 10px;
-    box-sizing: border-box;
-    scrollbar-width: thin;
-    scrollbar-color: var(--retro-neon-blue) #333;
-}
-
-.level-map-grid::-webkit-scrollbar {
-    width: 8px;
-}
-
-.level-map-grid::-webkit-scrollbar-track {
-    background: #333;
-    border-radius: 10px;
-}
-
-.level-map-grid::-webkit-scrollbar-thumb {
-    background-color: var(--retro-neon-blue);
-    border-radius: 10px;
-    border: 2px solid #333;
-}
-
-.level-button {
-    background-color: transparent;
-    color: var(--image-menu-text-color);
-    padding: 15px 10px;
-    border: 2px solid var(--image-menu-text-color);
-    border-radius: 8px;
-    cursor: pointer;
-    font-family: 'Press Start 2P', monospace;
-    font-size: 1em;
-    text-transform: uppercase;
-    transition: background-color 0.1s, color 0.1s, border-color 0.1s;
-    box-shadow: 3px 3px 0 #000;
-    min-width: 100px;
-}
-
-.level-button:hover:not(:disabled) {
-    background-color: rgba(0, 255, 255, 0.2);
-    color: var(--retro-neon-blue);
-    border-color: var(--retro-neon-blue);
-    box-shadow: 3px 3px 0 var(--retro-neon-blue);
-}
-
-/* Fix for level selection bug - remove auto-selection */
-.level-button.selected {
-    background-color: rgba(0, 255, 255, 0.3);
-    border: 2px solid var(--retro-neon-blue);
-    color: var(--retro-neon-blue);
-    box-shadow: 0 0 15px var(--retro-neon-blue);
-}
-
-.level-button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    border-color: #555;
-    color: #aaa;
-    text-shadow: none;
-}
-
-.level-button.completed {
-    background-color: rgba(0, 255, 0, 0.1);
-    border-color: var(--retro-neon-green);
+.stat-preview {
     color: var(--retro-neon-green);
-}
-
-#levelPlotDisplay {
-    color: var(--retro-text-color);
-    font-size: 0.9em;
-    line-height: 1.5;
+    font-size: 0.8em;
+    margin-left: 15px;
     text-shadow: 1px 1px #000;
-    margin-top: 20px;
-    padding: 10px;
-    border: 1px dashed #555;
-    background-color: rgba(0, 0, 0, 0.3);
-    border-radius: 5px;
-}
-
-#levelMapBackToMainBtn {
-    margin-top: 20px;
 }
 
 .menu-button {
@@ -472,104 +610,147 @@ canvas {
     padding: 8px 0;
     margin: 6px 0;
     border: none;
-    border-radius: 0;
     cursor: pointer;
     font-family: 'Press Start 2P', monospace;
     font-size: 1.1em;
     text-transform: uppercase;
-    transition: color 0.1s;
+    transition: color 0.1s, text-shadow 0.1s;
     display: block;
     width: 90%;
     margin-left: auto;
     margin-right: auto;
     box-sizing: border-box;
-    box-shadow: none;
     text-shadow: 2px 2px #000;
 }
 
 .menu-button:hover {
     color: var(--retro-neon-blue);
     background-color: transparent;
-    text-shadow: 2px 2px var(--retro-neon-blue);
+    text-shadow: 0 0 5px var(--retro-neon-blue);
+}
+
+.menu-button.selected {
+    color: var(--retro-neon-green);
+    text-shadow: 0 0 8px var(--retro-neon-green);
 }
 
 .menu-button.selected::before {
     content: '> ';
-    color: var(--retro-neon-blue);
+    color: var(--retro-neon-green);
 }
 
-#volumeSlider {
-    -webkit-appearance: none; 
-    appearance: none;       
-    width: 80%;
-    height: 10px;
-    background: var(--retro-medium-bg);
-    outline: none;
-    opacity: 0.7;
-    -webkit-transition: .2s;
-    transition: opacity .2s;
-    margin: 15px auto;
-    border: 1px solid var(--retro-neon-blue);
-    box-shadow: 0 0 10px var(--retro-neon-blue);
+#levelMapScreen {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    background: url('../assets/images/backgrounds/Upgrade_menu.JPG') no-repeat center center;
+    background-size: cover;
+    background-position: center;
+    z-index: 20;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0;
 }
 
-#volumeSlider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 25px;
-    height: 25px;
-    background: var(--retro-neon-blue);
+.level-map-content {
+    position: relative;
+    width: 90vw;
+    max-width: 900px;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    padding: 32px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 60px auto 0 auto;
+}
+
+.level-map-buttons-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    width: 100%;
+    margin-top: 20px;
+}
+
+.level-map-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 15px;
+    width: auto;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 10px;
+    flex-direction: row;
+}
+
+.level-button {
+    background-color: rgba(139, 69, 19, 0.8);
+    color: #fff8dc;
+    padding: 15px 10px;
+    border: 2px solid #8b4513;
     cursor: pointer;
-    border: 2px solid var(--retro-text-color);
-    box-shadow: 0 0 5px var(--retro-neon-blue);
+    font-family: 'Press Start 2P', monospace;
+    font-size: 1em;
+    text-transform: uppercase;
+    transition: all 0.2s;
+    box-shadow: 0 0 0 2px #000, 0 4px 8px rgba(0, 0, 0, 0.3);
+    min-width: 100px;
+    text-shadow: 2px 2px #000;
 }
 
-#volumeSlider::-moz-range-thumb {
-    width: 25px;
-    height: 25px;
-    background: var(--retro-neon-blue);
-    cursor: pointer;
-    border: 2px solid var(--retro-text-color);
-    box-shadow: 0 0 5px var(--retro-neon-blue);
+.level-button:hover:not(:disabled) {
+    background-color: rgba(210, 105, 30, 0.9);
+    color: #fff8dc;
+    text-shadow: 0 0 8px #ffd700, 2px 2px #000;
+    border-color: #ffd700;
+    box-shadow: 0 0 0 2px #000, 0 0 15px rgba(255, 215, 0, 0.5), 0 4px 8px rgba(0, 0, 0, 0.3);
+    transform: translateY(-2px);
 }
 
-@media (max-width: 768px) {
-    .game-ui {
-        padding: 20px 30px;
-        width: 90%;
-    }
-    .menu-button {
-        padding: 8px 0;
-        font-size: 1em;
-    }
-    .game-ui h1 {
-        font-size: 2.5em;
-    }
-    #levelMapScreen {
-        width: 95%;
-        padding: 10px;
-    }
-    .level-map-grid {
-        grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
-        gap: 10px;
-    }
-    .shop-sub-menu {
-        width: 95%;
-        padding: 20px;
-    }
-    #shipyardMenu {
-        grid-template-columns: 1fr;
-    }
-    #shipyardMenu .shop-info-column {
-        grid-row: 2;
-    }
-    .shop-item-button {
-        font-size: 0.9em;
-        padding: 12px 15px;
-    }
+.level-button.selected {
+    background-color: rgba(255, 140, 0, 0.9);
+    border-color: #ffd700;
+    color: #fff8dc;
+    text-shadow: 0 0 10px #ffd700, 2px 2px #000;
+    box-shadow: 0 0 0 2px #000, 0 0 20px rgba(255, 215, 0, 0.7), 0 4px 8px rgba(0, 0, 0, 0.3);
 }
 
-/* Commander Tutorial Popup Styles */
+.level-button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    border-color: #8b7355;
+    color: #d2b48c;
+    text-shadow: none;
+    background-color: rgba(139, 69, 19, 0.4);
+}
+
+.level-button.completed {
+    background-color: rgba(34, 139, 34, 0.8);
+    border-color: #32cd32;
+    color: #90ee90;
+    text-shadow: 0 0 8px #32cd32, 2px 2px #000;
+    box-shadow: 0 0 0 2px #000, 0 0 15px rgba(50, 205, 50, 0.5), 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+#levelPlotDisplay {
+    color: #fff8dc;
+    font-size: 0.9em;
+    line-height: 1.5;
+    text-shadow: 2px 2px #000;
+    margin-top: 20px;
+    padding: 15px;
+    border: 2px solid #8b4513;
+    background-color: rgba(139, 69, 19, 0.8);
+    box-shadow: 0 0 0 2px #000, 0 4px 8px rgba(0, 0, 0, 0.3);
+    border-radius: 5px;
+}
+
 .commander-popup {
     position: absolute;
     left: 50%;
@@ -579,8 +760,7 @@ canvas {
     max-width: 700px;
     background: linear-gradient(145deg, rgba(20, 10, 50, 0.98), rgba(40, 20, 80, 0.98));
     border: 3px solid var(--retro-neon-blue);
-    box-shadow: 0 0 25px var(--retro-neon-blue), 4px 4px 0 rgba(0,0,0,0.8);
-    border-radius: 0;
+    box-shadow: 0 0 25px var(--retro-neon-blue), 0 0 0 3px #000;
     z-index: 100;
     padding: 28px 32px 18px 32px;
     display: flex;
