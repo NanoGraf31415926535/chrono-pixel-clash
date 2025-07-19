@@ -1144,3 +1144,90 @@ canvas {
     font-weight: bold;
     text-shadow: 0 0 6px #ffd700, 1px 1px #552200;
 }
+.achievement-filters {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+.filter-btn {
+    background: linear-gradient(90deg, #ffd700 60%, #fffbe6 100%);
+    color: #221144;
+    border: 2px solid #ffd700;
+    box-shadow: 0 0 8px #ffd70088;
+    font-weight: bold;
+    text-shadow: none;
+    letter-spacing: 1px;
+    border-radius: 8px;
+    padding: 6px 16px;
+    font-size: 0.95em;
+    transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+    cursor: pointer;
+    outline: none;
+}
+.filter-btn.selected, .filter-btn:focus {
+    background: linear-gradient(90deg, #fffbe6 60%, #ffd700 100%);
+    color: #332200;
+    box-shadow: 0 0 16px #ffd700cc;
+    border-width: 3px;
+    z-index: 1;
+}
+.filter-btn:not(.selected):hover {
+    background: linear-gradient(90deg, #fffbe6 60%, #ffd700 100%);
+    color: #332200;
+    box-shadow: 0 0 12px #ffd70099;
+}
+.achievement-progress-bar-container {
+    width: 100%;
+    height: 14px;
+    background: #221144;
+    border: 1.5px solid #ffd70099;
+    border-radius: 6px;
+    margin-top: 6px;
+    margin-bottom: 2px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 0 8px #ffd70033;
+}
+.achievement-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #ffd700 0%, #fffbe6 100%);
+    border-radius: 6px;
+    box-shadow: 0 0 8px #ffd70099;
+    transition: width 0.4s cubic-bezier(0.4,0,0.2,1);
+}
+.achievement-progress-label {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.8em;
+    color: #332200;
+    font-weight: bold;
+    text-shadow: 0 0 4px #ffd700;
+    pointer-events: none;
+    line-height: 14px;
+}
+.achievement-entry.rare {
+    border: 2.5px solid #ffb300;
+    box-shadow: 0 0 32px 8px #ffb30088, 0 2px 8px #000a;
+    background: linear-gradient(90deg, #332200 60%, #ffb30044 100%);
+    position: relative;
+}
+.achievement-title .rare-badge {
+    color: #ffb300;
+    font-size: 1.1em;
+    margin-left: 4px;
+    text-shadow: 0 0 8px #ffb300, 1px 1px #552200;
+    vertical-align: middle;
+}
+.achievement-entry.just-unlocked {
+    animation: sparkle-glow 1.5s ease-in-out;
+    box-shadow: 0 0 48px 16px #ffd700cc, 0 2px 8px #000a;
+    border-color: #fffbe6;
+}
+@keyframes sparkle-glow {
+    0% { box-shadow: 0 0 0px #ffd70000; border-color: #ffd700; }
+    30% { box-shadow: 0 0 48px 16px #ffd700cc; border-color: #fffbe6; }
+    100% { box-shadow: 0 0 0px #ffd70000; border-color: #ffd700; }
+}

@@ -306,6 +306,18 @@ export class Game {
 
         if (this.showAchievementsBtn) this.showAchievementsBtn.addEventListener('click', () => this.switchAchievementsStats('achievements'));
         if (this.showStatsBtn) this.showStatsBtn.addEventListener('click', () => this.switchAchievementsStats('stats'));
+
+        this.achievementFilter = 'all'; // For filtering achievements
+        this.achievementFilterBtns = {};
+        // Add filter buttons for achievements
+        this.achievementFilterBtns = {
+            all: document.getElementById('filterAllAchievementsBtn'),
+            unlocked: document.getElementById('filterUnlockedAchievementsBtn'),
+            locked: document.getElementById('filterLockedAchievementsBtn')
+        };
+        Object.entries(this.achievementFilterBtns).forEach(([key, btn]) => {
+            if (btn) btn.addEventListener('click', () => this.setAchievementFilter(key));
+        });
     }
 
     /**
@@ -2157,41 +2169,47 @@ export class Game {
     initializeAchievements() {
         this.achievementManager.addAchievement(new Achievement({
             id: 'first_kill', name: 'First Contact', description: 'Defeat your first enemy.', icon: 'ach_first_kill',
-            conditionFn: (game) => game.enemiesDefeated >= 1
+            conditionFn: (game) => game.enemiesDefeated >= 1,
+            progressFn: (game) => ({ current: game.enemiesDefeated, max: 1 })
         }));
         this.achievementManager.addAchievement(new Achievement({
-            id: 'destroyer_100', name: 'Destroyer', description: 'Defeat 100 enemies.', icon: 'ach_destroyer',
-            conditionFn: (game) => game.enemiesDefeated >= 100
+            id: 'destroyer_100', name: 'Destroyer', description: 'Defeat 100 enemies.', icon: 'ach_destroyer', rare: true,
+            conditionFn: (game) => game.enemiesDefeated >= 100,
+            progressFn: (game) => ({ current: game.enemiesDefeated, max: 100 })
         }));
         this.achievementManager.addAchievement(new Achievement({
             id: 'moneybags_1k', name: 'Moneybags', description: 'Accumulate 1000 credits in one run.', icon: 'ach_money',
-            conditionFn: (game) => game.money >= 1000
+            conditionFn: (game) => game.money >= 1000,
+            progressFn: (game) => ({ current: game.money, max: 1000 })
         }));
         this.achievementManager.addAchievement(new Achievement({
             id: 'collector_3', name: 'Collector', description: 'Own 3 different ships.', icon: 'ach_collector',
-            conditionFn: (game) => game.ownedShips.length >= 3
+            conditionFn: (game) => game.ownedShips.length >= 3,
+            progressFn: (game) => ({ current: game.ownedShips.length, max: 3 })
         }));
         this.achievementManager.addAchievement(new Achievement({
             id: 'level_1_clear', name: 'Getting Started', description: 'Complete Level 1.', icon: 'ach_level_up',
-            conditionFn: (game) => game.completedLevels.includes(1)
+            conditionFn: (game) => game.completedLevels.includes(1),
+            progressFn: (game) => ({ current: game.completedLevels.includes(1) ? 1 : 0, max: 1 })
         }));
         this.achievementManager.addAchievement(new Achievement({
-            id: 'boss_slayer_1', name: 'Boss Slayer', description: 'Defeat the first boss.', icon: 'ach_boss_slayer',
-            conditionFn: (game) => game.completedLevels.includes(1) && game.boss === null
+            id: 'boss_slayer_1', name: 'Boss Slayer', description: 'Defeat the first boss.', icon: 'ach_boss_slayer', rare: true,
+            conditionFn: (game) => game.completedLevels.includes(1) && game.boss === null,
+            progressFn: (game) => ({ current: game.completedLevels.includes(1) ? 1 : 0, max: 1 })
         }));
         this.achievementManager.addAchievement(new Achievement({
             id: 'trigger_happy_500', name: 'Trigger Happy', description: 'Fire 500 projectiles.', icon: 'ach_trigger_happy',
-            conditionFn: (game) => game.projectilesFired >= 500
+            conditionFn: (game) => game.projectilesFired >= 500,
+            progressFn: (game) => ({ current: game.projectilesFired, max: 500 })
         }));
         this.achievementManager.addAchievement(new Achievement({
-            id: 'power_up_3', name: 'Power Overwhelming', description: 'Have 3 power-ups active at once.', icon: 'ach_power_up',
-            conditionFn: (game) => Object.keys(game.activePowerUpEffects).length >= 3
+            id: 'power_up_3', name: 'Power Overwhelming', description: 'Have 3 power-ups active at once.', icon: 'ach_power_up', rare: true,
+            conditionFn: (game) => Object.keys(game.activePowerUpEffects).length >= 3,
+            progressFn: (game) => ({ current: Object.keys(game.activePowerUpEffects).length, max: 3 })
         }));
         this.achievementManager.addAchievement(new Achievement({
             id: 'shopaholic_500', name: 'Shopaholic', description: 'Spend 500 credits at the shop.', icon: 'ach_shopaholic',
             conditionFn: (game) => {
-                // This requires tracking spending. For now, we'll tie it to upgrades.
-                // A better implementation would track total spending.
                 let totalSpent = 0;
                 for (const shipType in game.shipUpgrades) {
                     const upgrades = game.shipUpgrades[shipType];
@@ -2204,7 +2222,31 @@ export class Game {
                     }
                 }
                 return totalSpent >= 500;
+            },
+            progressFn: (game) => {
+                let totalSpent = 0;
+                for (const shipType in game.shipUpgrades) {
+                    const upgrades = game.shipUpgrades[shipType];
+                    const config = game.shipConfigs[shipType];
+                    for (const upgradeType in upgrades) {
+                        const level = upgrades[upgradeType];
+                        if (level > 0) {
+                            totalSpent += config.upgrades[upgradeType].costs.slice(0, level).reduce((a, b) => a + b, 0);
+                        }
+                    }
+                }
+                return { current: totalSpent, max: 500 };
             }
+        }));
+        this.achievementManager.addAchievement(new Achievement({
+            id: 'survivor', name: 'Survivor', description: 'Complete the game without losing the base.', icon: 'ach_survivor', rare: true,
+            conditionFn: (game) => game.currentLevel === game.levels.length - 1 && game.base.health > 0,
+            progressFn: (game) => ({ current: game.currentLevel === game.levels.length - 1 && game.base.health > 0 ? 1 : 0, max: 1 })
+        }));
+        this.achievementManager.addAchievement(new Achievement({
+            id: 'destroyer', name: 'Ultimate Destroyer', description: 'Defeat 1000 enemies.', icon: 'ach_destroyer', rare: true,
+            conditionFn: (game) => game.enemiesDefeated >= 1000,
+            progressFn: (game) => ({ current: game.enemiesDefeated, max: 1000 })
         }));
     }
 
@@ -2256,20 +2298,47 @@ export class Game {
         this.achievementsListDiv.innerHTML = '';
         const achievements = this.achievementManager.achievements;
         const unlocked = this.achievementManager.unlockedIds;
-        achievements.forEach(ach => {
+        // Filter achievements
+        let filtered = achievements;
+        if (this.achievementFilter === 'unlocked') filtered = achievements.filter(ach => unlocked.has(ach.id));
+        if (this.achievementFilter === 'locked') filtered = achievements.filter(ach => !unlocked.has(ach.id));
+        filtered.forEach(ach => {
             const div = document.createElement('div');
-            div.className = 'achievement-entry' + (unlocked.has(ach.id) ? ' unlocked' : ' locked');
+            let entryClass = 'achievement-entry';
+            if (unlocked.has(ach.id)) entryClass += ' unlocked';
+            else entryClass += ' locked';
+            if (ach.rare) entryClass += ' rare';
+            div.className = entryClass;
             const iconAsset = this.assetLoader.getAsset(ach.icon);
             const iconUrl = iconAsset ? iconAsset.src : '';
+            // Progress bar logic
+            let progressHtml = '';
+            if (ach.progressFn) {
+                const { current, max } = ach.progressFn(this);
+                const percent = Math.min(100, Math.round((current / max) * 100));
+                progressHtml = `
+                    <div class="achievement-progress-bar-container">
+                        <div class="achievement-progress-bar" style="width: ${percent}%;"></div>
+                        <span class="achievement-progress-label">${current} / ${max}</span>
+                    </div>
+                `;
+            }
             div.innerHTML = `
                 <div class="achievement-icon" style="background-image: url('${iconUrl}')"></div>
                 <div class="achievement-info">
-                    <span class="achievement-title">${ach.name}</span>
+                    <span class="achievement-title">${ach.name}${ach.rare ? ' <span class=\'rare-badge\'>★</span>' : ''}</span>
                     <span class="achievement-desc">${ach.description}</span>
                     <span class="achievement-status">${unlocked.has(ach.id) ? 'Unlocked' : 'Locked'}</span>
+                    ${progressHtml}
                 </div>
             `;
             this.achievementsListDiv.appendChild(div);
+            // Animated effect for newly unlocked
+            if (unlocked.has(ach.id) && ach.justUnlocked) {
+                div.classList.add('just-unlocked');
+                setTimeout(() => div.classList.remove('just-unlocked'), 2000);
+                ach.justUnlocked = false;
+            }
         });
     }
 
@@ -2316,5 +2385,13 @@ export class Game {
                 <div class="player-stat-row"><span class="stat-label">Losses:</span><span class="stat-value">${losses}</span></div>
             </div>
         `;
+    }
+
+    setAchievementFilter(filter) {
+        this.achievementFilter = filter;
+        Object.entries(this.achievementFilterBtns).forEach(([key, btn]) => {
+            if (btn) btn.classList.toggle('selected', key === filter);
+        });
+        this.renderAchievementsMenu();
     }
 }
