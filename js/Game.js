@@ -208,11 +208,6 @@ export class Game {
         this.assetProgressSpan = document.getElementById('assetProgress');
         
         this.startGameBtn = document.getElementById('startGameBtn');
-        this.difficultySelectionDiv = document.getElementById('difficultySelection');
-
-        this.easyBtn = document.getElementById('easyBtn');
-        this.normalBtn = document.getElementById('normalBtn');
-        this.hardBtn = document.getElementById('hardBtn');
         this.continueGameBtn = document.getElementById('continueGameBtn');
         this.optionsBtn = document.getElementById('optionsBtn');
         this.creditsBtn = document.getElementById('creditsBtn');
@@ -318,6 +313,33 @@ export class Game {
         Object.entries(this.achievementFilterBtns).forEach(([key, btn]) => {
             if (btn) btn.addEventListener('click', () => this.setAchievementFilter(key));
         });
+
+        // Add new difficulty buttons for options menu
+        this.setEasyBtn = document.getElementById('setEasyBtn');
+        this.setNormalBtn = document.getElementById('setNormalBtn');
+        this.setHardBtn = document.getElementById('setHardBtn');
+        this.currentDifficultyLabel = document.getElementById('currentDifficultyLabel');
+
+        // Add event listeners for new difficulty buttons
+        if (this.setEasyBtn) this.setEasyBtn.addEventListener('click', () => this.setDifficulty('easy'));
+        if (this.setNormalBtn) this.setNormalBtn.addEventListener('click', () => this.setDifficulty('normal'));
+        if (this.setHardBtn) this.setHardBtn.addEventListener('click', () => this.setDifficulty('hard'));
+        // ... existing code ...
+        // Update updateDifficultyLabel to highlight the selected button
+        this.updateDifficultyLabel = function() {
+            if (this.currentDifficultyLabel) {
+                let label = '';
+                switch (this.currentDifficulty) {
+                    case 'easy': label = 'Easy'; break;
+                    case 'normal': label = 'Normal'; break;
+                    case 'hard': label = 'Hard'; break;
+                }
+                this.currentDifficultyLabel.textContent = `Current: ${label}`;
+            }
+            if (this.difficultySelect) {
+                this.difficultySelect.value = this.currentDifficulty;
+            }
+        }.bind(this);
     }
 
     /**
@@ -387,10 +409,6 @@ export class Game {
 
         if (this.startGameBtn) this.startGameBtn.addEventListener('click', () => { this.showMenu(GAME_STATES.LEVEL_MAP); this.playSound('menuConfirm'); });
         
-        if (this.easyBtn) this.easyBtn.addEventListener('click', () => this.startSelectedLevelWithDifficulty('easy'));
-        if (this.normalBtn) this.normalBtn.addEventListener('click', () => this.startSelectedLevelWithDifficulty('normal'));
-        if (this.hardBtn) this.hardBtn.addEventListener('click', () => this.startSelectedLevelWithDifficulty('hard'));
-        
         if (this.continueGameBtn) this.continueGameBtn.addEventListener('click', () => {
             this.loadGame();
             this.showMenu(GAME_STATES.LEVEL_MAP);
@@ -425,6 +443,9 @@ export class Game {
         this.initializeAchievements();
         this.loadAssets();
         this.updateShipStats();
+
+        // Call updateDifficultyLabel in init and when showing options
+        this.updateDifficultyLabel();
     }
 
     loadAssets() {
@@ -545,21 +566,7 @@ export class Game {
     
     handleLevelSelection(levelIndex) {
         this.playSound('menuClick');
-        this.pendingLevelSelection = levelIndex;
-        this.showMenu(GAME_STATES.DIFFICULTY_SELECTION);
-    }
-
-    startSelectedLevelWithDifficulty(difficulty) {
-        if (this.pendingLevelSelection === null) {
-            console.error("No level selected to start game with difficulty.");
-            this.showMenu(GAME_STATES.MAIN_MENU); 
-            return;
-        }
-        this.playSound('menuConfirm');
-        this.currentDifficulty = difficulty;
-        this.resetGame(false, true);
-        this.startGame(this.pendingLevelSelection);
-        this.pendingLevelSelection = null;
+        this.startGame(levelIndex);
     }
 
     startGame(levelIndex) {
@@ -910,6 +917,7 @@ export class Game {
             case GAME_STATES.OPTIONS:
                 if (this.optionsMenuDiv) this.optionsMenuDiv.style.display = 'block';
                 this.currentMenuButtons = [this.toggleSoundBtn, this.volumeSlider, this.toggleFullscreenBtn, this.backToMainBtn].filter(Boolean);
+                this.updateDifficultyLabel();
                 break;
             case GAME_STATES.CREDITS:
                 if (this.creditsScreenDiv) this.creditsScreenDiv.style.display = 'block';
@@ -928,10 +936,6 @@ export class Game {
                 }
                 if (this.levelMapBackToMainBtn) this.currentMenuButtons.push(this.levelMapBackToMainBtn);
                 this.displayLevelPlot(this.currentLevel);
-                break;
-            case GAME_STATES.DIFFICULTY_SELECTION:
-                if (this.difficultySelectionDiv) this.difficultySelectionDiv.style.display = 'block';
-                this.currentMenuButtons = [this.easyBtn, this.normalBtn, this.hardBtn, this.backToLevelMapBtn].filter(Boolean);
                 break;
             case GAME_STATES.GAME_OVER:
                 if (this.gameOverScreenDiv) this.gameOverScreenDiv.style.display = 'block';
@@ -1982,17 +1986,6 @@ export class Game {
         this.saveGame();
     }
 
-    showDifficultySelection() {
-        if (this.startGameBtn) this.startGameBtn.style.display = 'none';
-        if (this.difficultySelectionDiv) this.difficultySelectionDiv.style.display = 'block';
-        this.currentMenuButtons = [this.easyBtn, this.normalBtn, this.hardBtn, this.backToLevelMapBtn].filter(Boolean);
-        this.updateSelectedMenuButton();
-    }
-
-    hideDifficultySelection() {
-        if (this.difficultySelectionDiv) this.difficultySelectionDiv.style.display = 'none';
-    }
-
     populateLevelMap() {
         if (!this.levelButtonsContainer) return;
         this.levelButtonsContainer.innerHTML = '';
@@ -2393,5 +2386,26 @@ export class Game {
             if (btn) btn.classList.toggle('selected', key === filter);
         });
         this.renderAchievementsMenu();
+    }
+
+    setDifficulty(difficulty) {
+        this.currentDifficulty = difficulty;
+        this.saveGame();
+        this.updateDifficultyLabel();
+    }
+
+    updateDifficultyLabel() {
+        if (this.currentDifficultyLabel) {
+            let label = '';
+            switch (this.currentDifficulty) {
+                case 'easy': label = 'Easy'; break;
+                case 'normal': label = 'Normal'; break;
+                case 'hard': label = 'Hard'; break;
+            }
+            this.currentDifficultyLabel.textContent = `Current: ${label}`;
+        }
+        if (this.difficultySelect) {
+            this.difficultySelect.value = this.currentDifficulty;
+        }
     }
 }

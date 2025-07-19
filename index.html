@@ -29,16 +29,17 @@
             <button id="creditsBtn" class="pixel-shooter-btn">Credits</button>
         </div>
 
-        <div id="difficultySelection" class="game-ui" style="display: none;">
-            <h2>SELECT DIFFICULTY</h2>
-            <button id="easyBtn" class="pixel-shooter-btn selected">Easy</button>
-            <button id="normalBtn" class="pixel-shooter-btn">Normal</button>
-            <button id="hardBtn" class="pixel-shooter-btn">Hard</button>
-            <button id="backToLevelMapBtn" class="pixel-shooter-btn">BACK TO LEVEL MAP</button>
-        </div>
-
         <div id="optionsMenu" class="game-ui" style="display: none;">
             <h2>OPTIONS</h2>
+            <div id="difficultyOptions" style="margin-bottom: 15px;">
+                <label for="difficultySelect">DIFFICULTY:</label>
+                <select id="difficultySelect">
+                    <option value="easy">Easy</option>
+                    <option value="normal">Normal</option>
+                    <option value="hard">Hard</option>
+                </select>
+                <span id="currentDifficultyLabel"></span>
+            </div>
             <button id="toggleSoundBtn" class="menu-button">TOGGLE SOUND (OFF)</button>
             <label for="volumeSlider" style="display: block; margin-top: 15px; color: var(--image-menu-text-color);">VOLUME:</label>
             <input type="range" id="volumeSlider" min="0" max="100" value="50">
