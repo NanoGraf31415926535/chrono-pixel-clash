@@ -290,6 +290,22 @@ export class Game {
         this.bombPlacement = { x: 0, y: 0, radius: 250 };
 
         this.init();
+
+        this.achievementsMenuDiv = document.getElementById('achievementsMenu');
+        this.achievementsListDiv = document.getElementById('achievementsList');
+        this.achievementsBtn = document.getElementById('achievementsBtn');
+        this.backToMainFromAchievementsBtn = document.getElementById('backToMainFromAchievementsBtn');
+
+        if (this.achievementsBtn) this.achievementsBtn.addEventListener('click', () => this.showMenu('ACHIEVEMENTS'));
+        if (this.backToMainFromAchievementsBtn) this.backToMainFromAchievementsBtn.addEventListener('click', () => this.showMenu(GAME_STATES.MAIN_MENU));
+
+        this.playerStatsDiv = document.getElementById('playerStats');
+        this.achievementsStatsToggle = document.getElementById('achievementsStatsToggle');
+        this.showAchievementsBtn = document.getElementById('showAchievementsBtn');
+        this.showStatsBtn = document.getElementById('showStatsBtn');
+
+        if (this.showAchievementsBtn) this.showAchievementsBtn.addEventListener('click', () => this.switchAchievementsStats('achievements'));
+        if (this.showStatsBtn) this.showStatsBtn.addEventListener('click', () => this.switchAchievementsStats('stats'));
     }
 
     /**
@@ -864,6 +880,7 @@ export class Game {
         if (this.difficultySelectionDiv) this.difficultySelectionDiv.style.display = 'none';
         if (this.startGameBtn) this.startGameBtn.style.display = 'none';
         if (this.levelMapScreenDiv) this.levelMapScreenDiv.style.display = 'none';
+        if (this.achievementsMenuDiv) this.achievementsMenuDiv.style.display = 'none';
 
         this.currentState = menuState;
         this.selectedMenuButtonIndex = 0;
@@ -875,7 +892,7 @@ export class Game {
                 this.updateMainMenuButtons();
                 this.currentMenuButtons = [
                     this.startGameBtn,
-                    this.continueGameBtn, this.optionsBtn, this.creditsBtn
+                    this.continueGameBtn, this.achievementsBtn, this.optionsBtn, this.creditsBtn
                 ].filter(btn => btn && btn.style.display !== 'none');
                 break;
             case GAME_STATES.OPTIONS:
@@ -910,6 +927,10 @@ export class Game {
                 if (this.gameOverBaseHealthSpan) this.gameOverBaseHealthSpan.textContent = this.base.health;
                 this.currentMenuButtons = [this.gameOverBackToMainBtn].filter(Boolean);
                 this.playSound('gameOverSound');
+                // Track losses
+                let losses = parseInt(localStorage.getItem('spaceInvadersLosses') || '0', 10);
+                losses++;
+                localStorage.setItem('spaceInvadersLosses', losses);
                 break;
             case GAME_STATES.VICTORY:
                 if (this.victoryScreenDiv) this.victoryScreenDiv.style.display = 'block';
@@ -920,6 +941,11 @@ export class Game {
             case GAME_STATES.LOADING:
                 if (this.loadingTextDiv) this.loadingTextDiv.style.display = 'block';
                 this.currentMenuButtons = [];
+                break;
+            case 'ACHIEVEMENTS':
+                if (this.achievementsMenuDiv) this.achievementsMenuDiv.style.display = 'block';
+                this.switchAchievementsStats('achievements');
+                this.currentMenuButtons = [this.backToMainFromAchievementsBtn].filter(Boolean);
                 break;
             default:
                 this.currentMenuButtons = [];
@@ -2223,5 +2249,72 @@ export class Game {
                 notification.remove();
             }, 500); // Match CSS transition
         }, displayDuration);
+    }
+
+    renderAchievementsMenu() {
+        if (!this.achievementsListDiv) return;
+        this.achievementsListDiv.innerHTML = '';
+        const achievements = this.achievementManager.achievements;
+        const unlocked = this.achievementManager.unlockedIds;
+        achievements.forEach(ach => {
+            const div = document.createElement('div');
+            div.className = 'achievement-entry' + (unlocked.has(ach.id) ? ' unlocked' : ' locked');
+            const iconAsset = this.assetLoader.getAsset(ach.icon);
+            const iconUrl = iconAsset ? iconAsset.src : '';
+            div.innerHTML = `
+                <div class="achievement-icon" style="background-image: url('${iconUrl}')"></div>
+                <div class="achievement-info">
+                    <span class="achievement-title">${ach.name}</span>
+                    <span class="achievement-desc">${ach.description}</span>
+                    <span class="achievement-status">${unlocked.has(ach.id) ? 'Unlocked' : 'Locked'}</span>
+                </div>
+            `;
+            this.achievementsListDiv.appendChild(div);
+        });
+    }
+
+    switchAchievementsStats(section) {
+        if (!this.achievementsListDiv || !this.playerStatsDiv || !this.showAchievementsBtn || !this.showStatsBtn) return;
+        if (section === 'achievements') {
+            this.achievementsListDiv.style.display = '';
+            this.playerStatsDiv.style.display = 'none';
+            this.showAchievementsBtn.classList.add('selected');
+            this.showStatsBtn.classList.remove('selected');
+            this.renderAchievementsMenu();
+        } else {
+            this.achievementsListDiv.style.display = 'none';
+            this.playerStatsDiv.style.display = '';
+            this.showAchievementsBtn.classList.remove('selected');
+            this.showStatsBtn.classList.add('selected');
+            this.renderPlayerStats();
+        }
+    }
+
+    renderPlayerStats() {
+        if (!this.playerStatsDiv) return;
+        // Calculate stats
+        const shots = this.projectilesFired;
+        const ships = this.ownedShips.length;
+        const money = this.money;
+        const exp = this.experience;
+        const levelsCompleted = this.completedLevels.length;
+        const enemiesKilled = this.enemiesDefeated;
+        const bossesKilled = this.completedLevels.length; // Each completed level = 1 boss killed
+        const wins = this.completedLevels.length > 0 ? 1 : 0; // 1 win if at least one victory
+        const losses = parseInt(localStorage.getItem('spaceInvadersLosses') || '0', 10);
+
+        this.playerStatsDiv.innerHTML = `
+            <div class="player-stats-list">
+                <div class="player-stat-row"><span class="stat-label">Shots Fired:</span><span class="stat-value">${shots}</span></div>
+                <div class="player-stat-row"><span class="stat-label">Ships Owned:</span><span class="stat-value">${ships}</span></div>
+                <div class="player-stat-row"><span class="stat-label">Money:</span><span class="stat-value">${money}</span></div>
+                <div class="player-stat-row"><span class="stat-label">Experience:</span><span class="stat-value">${exp}</span></div>
+                <div class="player-stat-row"><span class="stat-label">Levels Completed:</span><span class="stat-value">${levelsCompleted}</span></div>
+                <div class="player-stat-row"><span class="stat-label">Enemies Killed:</span><span class="stat-value">${enemiesKilled}</span></div>
+                <div class="player-stat-row"><span class="stat-label">Bosses Killed:</span><span class="stat-value">${bossesKilled}</span></div>
+                <div class="player-stat-row"><span class="stat-label">Wins:</span><span class="stat-value">${wins}</span></div>
+                <div class="player-stat-row"><span class="stat-label">Losses:</span><span class="stat-value">${losses}</span></div>
+            </div>
+        `;
     }
 }

@@ -24,6 +24,7 @@
             </h1>
             <button id="startGameBtn" class="pixel-shooter-btn">Start Game</button>
             <button id="continueGameBtn" class="pixel-shooter-btn" style="display:none;">Continue Game</button>
+            <button id="achievementsBtn" class="pixel-shooter-btn">Achievements</button>
             <button id="optionsBtn" class="pixel-shooter-btn">Options</button>
             <button id="creditsBtn" class="pixel-shooter-btn">Credits</button>
         </div>
@@ -121,6 +122,21 @@
                 <span id="commanderText"></span><span class="commander-cursor">|</span>
             </div>
             <button id="commanderNextBtn" class="menu-button">Next</button>
+        </div>
+
+        <div id="achievementsMenu" class="game-ui" style="display: none;">
+            <h2>ACHIEVEMENTS & STATS</h2>
+            <div id="achievementsStatsToggle" class="achievements-stats-toggle">
+                <button id="showAchievementsBtn" class="toggle-btn selected">Achievements</button>
+                <button id="showStatsBtn" class="toggle-btn">Player Stats</button>
+            </div>
+            <div id="achievementsList">
+                <!-- Achievements will be dynamically populated here -->
+            </div>
+            <div id="playerStats" style="display: none;">
+                <!-- Player stats will be dynamically populated here -->
+            </div>
+            <button id="backToMainFromAchievementsBtn" class="menu-button">BACK TO MAIN MENU</button>
         </div>
     </div>
     <script type="module" src="js/main.js"></script>
