@@ -243,12 +243,12 @@ export class Game {
         this.soundEnabled = true;
         this.bgMusic = null;
         this.gameVolume = 0.5;
+        this.isAudioUnlocked = false; // Flag to track user interaction for audio playback
 
-        this.shotSound = null;
-        this.explosionSound = null;
-        this.powerUpSound = null;
-        this.baseHitSound = null;
-        this.abilitySound = null;
+        // Sound pools and individual sound references
+        this.sounds = {};
+        this.soundPools = {};
+        this.soundPoolSize = 10; // Number of audio instances for pooled sounds
 
         this.currentMenuButtons = [];
         this.selectedMenuButtonIndex = 0;
@@ -285,7 +285,50 @@ export class Game {
         this.init();
     }
 
+    /**
+     * Plays a sound effect, using a pooling system for frequently played sounds.
+     * @param {string} soundName - The name of the sound to play (e.g., 'explosionSound').
+     */
+    playSound(soundName) {
+        if (!this.soundEnabled || !this.isAudioUnlocked) return;
+
+        if (this.soundPools[soundName]) {
+            const pool = this.soundPools[soundName];
+            const audio = pool.audios[pool.currentIndex];
+            audio.currentTime = 0;
+            audio.play().catch(e => console.error(`Error playing pooled sound ${soundName}:`, e));
+            pool.currentIndex = (pool.currentIndex + 1) % pool.audios.length;
+        } else if (this.sounds[soundName]) {
+            this.sounds[soundName].currentTime = 0;
+            this.sounds[soundName].play().catch(e => console.error(`Error playing sound ${soundName}:`, e));
+        }
+    }
+
     init() {
+        // Unlock audio context on the first user interaction
+        const unlockAudio = () => {
+            if (this.isAudioUnlocked) return;
+            this.isAudioUnlocked = true;
+            // Attempt to play and pause all audio to unlock it
+            for (const soundName in this.sounds) {
+                if (this.sounds[soundName]) {
+                    this.sounds[soundName].play().then(() => this.sounds[soundName].pause()).catch(() => {});
+                }
+            }
+            for (const soundName in this.soundPools) {
+                this.soundPools[soundName].audios.forEach(audio => {
+                    audio.play().then(() => audio.pause()).catch(() => {});
+                });
+            }
+            if(this.bgMusic) {
+                this.bgMusic.play().then(() => this.bgMusic.pause()).catch(() => {});
+            }
+            window.removeEventListener('click', unlockAudio);
+            window.removeEventListener('keydown', unlockAudio);
+        };
+        window.addEventListener('click', unlockAudio, { once: true });
+        window.addEventListener('keydown', unlockAudio, { once: true });
+
         if (this.canvas) {
             this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
             this.canvas.addEventListener('mousemove', (e) => {
@@ -301,7 +344,13 @@ export class Game {
         window.addEventListener('keyup', this.handleKeyUp.bind(this));
         window.addEventListener('resize', this.handleResize.bind(this));
 
-        if (this.startGameBtn) this.startGameBtn.addEventListener('click', () => this.showMenu(GAME_STATES.LEVEL_MAP));
+        // Add sound to all button clicks
+        document.querySelectorAll('.menu-button').forEach(button => {
+            button.addEventListener('click', () => this.playSound('menuClick'));
+            button.addEventListener('mouseenter', () => this.playSound('menuHover'));
+        });
+
+        if (this.startGameBtn) this.startGameBtn.addEventListener('click', () => { this.showMenu(GAME_STATES.LEVEL_MAP); this.playSound('menuConfirm'); });
         
         if (this.easyBtn) this.easyBtn.addEventListener('click', () => this.startSelectedLevelWithDifficulty('easy'));
         if (this.normalBtn) this.normalBtn.addEventListener('click', () => this.startSelectedLevelWithDifficulty('normal'));
@@ -310,6 +359,7 @@ export class Game {
         if (this.continueGameBtn) this.continueGameBtn.addEventListener('click', () => {
             this.loadGame();
             this.showMenu(GAME_STATES.LEVEL_MAP);
+            this.playSound('menuConfirm');
         });
         
         if (this.optionsBtn) this.optionsBtn.addEventListener('click', () => this.showMenu(GAME_STATES.OPTIONS));
@@ -363,40 +413,55 @@ export class Game {
         this.assetLoader.loadImage('moneyPowerUpSprite', 'assets/images/powerups/powerup_money.png');
         this.assetLoader.loadImage('healPowerUpSprite', 'assets/images/powerups/powerup_heal.png');
         this.assetLoader.loadImage('bombPowerUpSprite', 'assets/images/powerups/powerup_bomb.png');
-        this.assetLoader.loadImage('slowEnemiesPowerUpSprite', 'assets/images/powerups/powerup_slow.png'); // Corrected sprite name
+        this.assetLoader.loadImage('slowEnemiesPowerUpSprite', 'assets/images/powerups/powerup_slow.png');
         this.assetLoader.loadImage('explosionSprite', 'assets/images/effects/explosion_1.png');
 
         for (let i = 1; i <= 7; i++) {
             this.assetLoader.loadImage(`ship${i}Sprite`, `assets/images/Starships/Ship_${i}.png`);
         }
 
+        // Load existing and new sounds
         this.assetLoader.loadAudio('bgMusic', 'assets/audio/bg_music.mp3');
         this.assetLoader.loadAudio('shotSound', 'assets/audio/shot.mp3');
         this.assetLoader.loadAudio('explosionSound', 'assets/audio/explosion.mp3');
         this.assetLoader.loadAudio('powerUpSound', 'assets/audio/powerup.mp3');
         this.assetLoader.loadAudio('baseHitSound', 'assets/audio/base_hit.mp3');
         this.assetLoader.loadAudio('abilitySound', 'assets/audio/ability.mp3');
+        this.assetLoader.loadAudio('menuHover', 'assets/audio/Menu-Selection-Change-B.mp3');
+        this.assetLoader.loadAudio('menuClick', 'assets/audio/Menu-Selection-Change-A.mp3');
+        this.assetLoader.loadAudio('menuConfirm', 'assets/audio/Sci-Fi-Interface-Select.mp3');
+        this.assetLoader.loadAudio('gameOverSound', 'assets/audio/Retro-Game-Over-2.mp3');
+        this.assetLoader.loadAudio('victorySound', 'assets/audio/Video-Game-Win-Level-2.mp3');
+
 
         this.assetLoader.onComplete = () => {
             console.log('All assets loaded!');
             const randomIndex = Math.floor(Math.random() * this.terrainSpriteNames.length);
             this.currentBackgroundSpriteName = this.terrainSpriteNames[randomIndex];
+            
+            // Assign sounds and create pools
             this.bgMusic = this.assetLoader.getAsset('bgMusic');
             if (this.bgMusic) {
                 this.bgMusic.loop = true;
                 this.bgMusic.volume = this.gameVolume;
             }
-            this.shotSound = this.assetLoader.getAsset('shotSound');
-            this.explosionSound = this.assetLoader.getAsset('explosionSound');
-            this.powerUpSound = this.assetLoader.getAsset('powerUpSound');
-            this.baseHitSound = this.assetLoader.getAsset('baseHitSound');
-            this.abilitySound = this.assetLoader.getAsset('abilitySound');
 
-            if (this.shotSound) this.shotSound.volume = this.gameVolume;
-            if (this.explosionSound) this.explosionSound.volume = this.gameVolume;
-            if (this.powerUpSound) this.powerUpSound.volume = this.gameVolume;
-            if (this.baseHitSound) this.baseHitSound.volume = this.gameVolume;
-            if (this.abilitySound) this.abilitySound.volume = this.gameVolume;
+            const soundNames = ['shotSound', 'powerUpSound', 'baseHitSound', 'abilitySound', 'menuHover', 'menuClick', 'menuConfirm', 'gameOverSound', 'victorySound'];
+            soundNames.forEach(name => {
+                this.sounds[name] = this.assetLoader.getAsset(name);
+                if (this.sounds[name]) this.sounds[name].volume = this.gameVolume;
+            });
+
+            // Create a sound pool for explosions
+            this.soundPools['explosionSound'] = { audios: [], currentIndex: 0 };
+            const explosionAsset = this.assetLoader.getAsset('explosionSound');
+            if (explosionAsset) {
+                for (let i = 0; i < this.soundPoolSize; i++) {
+                    const audio = explosionAsset.cloneNode();
+                    audio.volume = this.gameVolume;
+                    this.soundPools['explosionSound'].audios.push(audio);
+                }
+            }
             
             if (this.toggleSoundBtn) this.toggleSoundBtn.textContent = `TOGGLE SOUND (${this.soundEnabled ? 'ON' : 'OFF'})`;
             if (this.volumeSlider) this.volumeSlider.value = this.gameVolume * 100;
@@ -430,6 +495,7 @@ export class Game {
     }
     
     handleLevelSelection(levelIndex) {
+        this.playSound('menuClick');
         this.pendingLevelSelection = levelIndex;
         this.showMenu(GAME_STATES.DIFFICULTY_SELECTION);
     }
@@ -440,7 +506,7 @@ export class Game {
             this.showMenu(GAME_STATES.MAIN_MENU); 
             return;
         }
-
+        this.playSound('menuConfirm');
         this.currentDifficulty = difficulty;
         this.resetGame(false, true);
         this.startGame(this.pendingLevelSelection);
@@ -519,14 +585,7 @@ export class Game {
 
                 if (this.toggleSoundBtn) this.toggleSoundBtn.textContent = `TOGGLE SOUND (${this.soundEnabled ? 'ON' : 'OFF'})`;
                 if (this.volumeSlider) this.volumeSlider.value = this.gameVolume * 100;
-                if (this.bgMusic) {
-                    this.bgMusic.volume = this.soundEnabled ? this.gameVolume : 0;
-                }
-                if (this.shotSound) this.shotSound.volume = this.soundEnabled ? this.gameVolume : 0;
-                if (this.explosionSound) this.explosionSound.volume = this.soundEnabled ? this.gameVolume : 0;
-                if (this.powerUpSound) this.powerUpSound.volume = this.soundEnabled ? this.gameVolume : 0;
-                if (this.baseHitSound) this.baseHitSound.volume = this.soundEnabled ? this.gameVolume : 0;
-                if (this.abilitySound) this.abilitySound.volume = this.soundEnabled ? this.gameVolume : 0;
+                this.setVolume(this.gameVolume);
                 
                 const maxCompletedLevel = this.completedLevels.length > 0 ? Math.max(...this.completedLevels) : 0;
                 this.currentLevel = Math.min(maxCompletedLevel + 1, this.levels.length - 1);
@@ -717,6 +776,7 @@ export class Game {
 
 
     handleShopAction(actionType, type = null) {
+        this.playSound('menuClick');
         let purchased = false, equipped = false, upgraded = false;
 
         switch (actionType) {
@@ -729,12 +789,14 @@ export class Game {
                     this.currentShipType = type;
                     purchased = true;
                     equipped = true;
+                    this.playSound('menuConfirm');
                 }
                 break;
             case 'equipShip':
                 if (this.ownedShips.includes(type) && this.currentShipType !== type) {
                     this.currentShipType = type;
                     equipped = true;
+                    this.playSound('menuConfirm');
                 }
                 break;
             case 'upgradeShip':
@@ -750,6 +812,7 @@ export class Game {
                         this.money -= cost;
                         currentUpgrades[upgradeType]++;
                         upgraded = true;
+                        this.playSound('menuConfirm');
                     }
                 }
                 break;
@@ -819,11 +882,13 @@ export class Game {
                 if (this.gameOverScoreSpan) this.gameOverScoreSpan.textContent = this.score;
                 if (this.gameOverBaseHealthSpan) this.gameOverBaseHealthSpan.textContent = this.base.health;
                 this.currentMenuButtons = [this.gameOverBackToMainBtn].filter(Boolean);
+                this.playSound('gameOverSound');
                 break;
             case GAME_STATES.VICTORY:
                 if (this.victoryScreenDiv) this.victoryScreenDiv.style.display = 'block';
                 if (this.victoryScoreSpan) this.victoryScoreSpan.textContent = this.score;
                 this.currentMenuButtons = [this.victoryBackToMainBtn].filter(Boolean);
+                this.playSound('victorySound');
                 break;
             case GAME_STATES.LOADING:
                 if (this.loadingTextDiv) this.loadingTextDiv.style.display = 'block';
@@ -842,6 +907,7 @@ export class Game {
 
         if (this.currentMenuButtons.length > 0 && this.currentMenuButtons[this.selectedMenuButtonIndex]) {
             this.currentMenuButtons[this.selectedMenuButtonIndex].classList.add('selected');
+            this.playSound('menuHover');
         }
     }
     
@@ -905,7 +971,7 @@ export class Game {
             if (checkCollision(enemy, this.base)) {
                 enemy.active = false;
                 this.base.health -= 10;
-                if (this.soundEnabled && this.baseHitSound) this.baseHitSound.play().catch(e => console.error(e));
+                this.playSound('baseHitSound');
                 if (this.base.health <= 0) {
                     this.base.health = 0;
                     this.showMenu(GAME_STATES.GAME_OVER);
@@ -928,7 +994,7 @@ export class Game {
                         this.experience += Math.round(10 * difficulty.expRate);
                         if (Math.random() < 0.3) this.spawnPowerUp(enemy);
                         this.explosions.push(new Explosion(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, this.assetLoader.getAsset('explosionSprite')));
-                        if (this.soundEnabled && this.explosionSound) this.explosionSound.play().catch(e => console.error(e));
+                        this.playSound('explosionSound');
                     }
                     break;
                 }
@@ -951,7 +1017,7 @@ export class Game {
                     projectile.active = false;
                     this.boss.health -= projectile.damage;
                     this.explosions.push(new Explosion(projectile.x, projectile.y, this.assetLoader.getAsset('explosionSprite')));
-                    if (this.soundEnabled && this.explosionSound) this.explosionSound.play().catch(e => console.error(e));
+                    this.playSound('explosionSound');
                     if (this.boss.health <= 0) {
                         this.boss.active = false;
                         this.bossDefeated();
@@ -1037,11 +1103,11 @@ export class Game {
                         this.bombPlacement.x = this.player.x + this.player.width / 2;
                         this.bombPlacement.y = this.player.y + this.player.height / 2;
                         this.displayPowerUpNotification(powerUp.type, 0); // Show bomb notification
-                        if (this.soundEnabled && this.powerUpSound) this.powerUpSound.play().catch(e => console.error(e));
+                        this.playSound('powerUpSound');
                     } else if (powerUp.type !== 'bomb') {
                         powerUp.active = false;
                         this.applyPowerUpEffect(powerUp.type, powerUp.duration);
-                        if (this.soundEnabled && this.powerUpSound) this.powerUpSound.play().catch(e => console.error(e));
+                        this.playSound('powerUpSound');
                     }
                 }
             }
@@ -1220,10 +1286,7 @@ export class Game {
             return;
         }
     
-        if (this.soundEnabled && this.abilitySound) {
-            this.abilitySound.currentTime = 0;
-            this.abilitySound.play().catch(e => console.error("Error playing ability sound:", e));
-        }
+        this.playSound('abilitySound');
     
         this.shipAbilityCooldowns[abilityName] = cooldown;
     
@@ -1283,20 +1346,14 @@ export class Game {
                     this.money += Math.round(5 * difficulty.moneyRate);
                     this.experience += Math.round(10 * difficulty.expRate);
                     this.explosions.push(new Explosion(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, this.assetLoader.getAsset('explosionSprite'), 10, 50, 0.5));
-                    if (this.soundEnabled && this.explosionSound) {
-                        this.explosionSound.currentTime = 0;
-                        this.explosionSound.play().catch(e => console.error("Error playing explosion sound:", e));
-                    }
+                    this.playSound('explosionSound');
                 });
                 this.enemies = [];
     
                 if (this.boss && this.boss.active) {
                     this.boss.health -= 200;
                     this.explosions.push(new Explosion(this.boss.x + this.boss.width / 2, this.boss.y + this.boss.height / 2, this.assetLoader.getAsset('explosionSprite'), 10, 100, 0.5));
-                    if (this.soundEnabled && this.explosionSound) {
-                        this.explosionSound.currentTime = 0;
-                        this.explosionSound.play().catch(e => console.error("Error playing explosion sound:", e));
-                    }
+                    this.playSound('explosionSound');
                     if (this.boss.health <= 0) {
                         this.boss.active = false;
                         this.bossDefeated();
@@ -1386,10 +1443,7 @@ export class Game {
                 const currentTime = performance.now() / 1000;
                 if (currentTime - this.lastShotTime >= this.currentShipStats.fireRate) {
                     this.player.fire();
-                    if (this.soundEnabled && this.shotSound) {
-                        this.shotSound.currentTime = 0;
-                        this.shotSound.play().catch(e => console.error("Error playing shot sound:", e));
-                    }
+                    this.playSound('shotSound');
                     this.lastShotTime = currentTime;
                     this.canFireOnKeyPress = false;
                 }
@@ -1654,14 +1708,12 @@ export class Game {
      * @param {number} duration - The duration of the power-up effect in seconds.
      */
     applyPowerUpEffect(type, duration) {
-        // This object is still useful for game logic checks, but not for the UI timer itself.
         const effect = { timer: duration, duration: duration }; 
         let value = null;
 
         switch (type) {
             case 'shield':
                 this.playerInvincible = true;
-                // This separate invincibility timer handles the player flashing and damage immunity.
                 this.invincibilityTimer = duration; 
                 this.activePowerUpEffects.shield = effect;
                 break;
@@ -1681,8 +1733,6 @@ export class Game {
                 this.playerHealth = Math.min(this.playerHealth + value, this.currentShipStats.health);
                 break;
             case 'bomb':
-                // The logic for holding and placing the bomb is handled elsewhere.
-                // This just triggers the notification.
                 break;
             case 'slowEnemies':
                 if (!this.activePowerUpEffects.slowEnemies) {
@@ -1697,14 +1747,12 @@ export class Game {
                 break;
         }
         
-        // Centralized call to display the visual notification.
         this.displayPowerUpNotification(type, duration, value);
     }
 
     deactivatePowerUpEffect(type) {
         switch (type) {
             case 'shield':
-                // The main invincibility is handled by its own timer, but we remove the effect from the logic tracking.
                 delete this.activePowerUpEffects.shield;
                 break;
             case 'fireRate':
@@ -1824,28 +1872,29 @@ export class Game {
     toggleSound() {
         this.soundEnabled = !this.soundEnabled;
         if (this.toggleSoundBtn) this.toggleSoundBtn.textContent = `TOGGLE SOUND (${this.soundEnabled ? 'ON' : 'OFF'})`;
-        if (this.bgMusic) {
-            this.bgMusic.volume = this.soundEnabled ? this.gameVolume : 0;
-        }
-        if (this.shotSound) this.shotSound.volume = this.soundEnabled ? this.gameVolume : 0;
-        if (this.explosionSound) this.explosionSound.volume = this.soundEnabled ? this.gameVolume : 0;
-        if (this.powerUpSound) this.powerUpSound.volume = this.soundEnabled ? this.gameVolume : 0;
-        if (this.baseHitSound) this.baseHitSound.volume = this.soundEnabled ? this.gameVolume : 0;
-        if (this.abilitySound) this.abilitySound.volume = this.soundEnabled ? this.gameVolume : 0;
-
+        this.setVolume(this.gameVolume); // This will update all sounds based on the new enabled state
         this.saveGame();
     }
 
     setVolume(volume) {
         this.gameVolume = volume;
+        const effectiveVolume = this.soundEnabled ? this.gameVolume : 0;
+
         if (this.bgMusic) {
-            this.bgMusic.volume = this.soundEnabled ? this.gameVolume : 0;
+            this.bgMusic.volume = effectiveVolume;
         }
-        if (this.shotSound) this.shotSound.volume = this.soundEnabled ? this.gameVolume : 0;
-        if (this.explosionSound) this.explosionSound.volume = this.soundEnabled ? this.gameVolume : 0;
-        if (this.powerUpSound) this.powerUpSound.volume = this.soundEnabled ? this.gameVolume : 0;
-        if (this.baseHitSound) this.baseHitSound.volume = this.soundEnabled ? this.gameVolume : 0;
-        if (this.abilitySound) this.abilitySound.volume = this.soundEnabled ? this.gameVolume : 0;
+
+        for (const soundName in this.sounds) {
+            if (this.sounds[soundName]) {
+                this.sounds[soundName].volume = effectiveVolume;
+            }
+        }
+
+        for (const soundName in this.soundPools) {
+            this.soundPools[soundName].audios.forEach(audio => {
+                audio.volume = effectiveVolume;
+            });
+        }
 
         this.saveGame();
     }
@@ -2002,10 +2051,7 @@ export class Game {
         const x = this.bombPlacement.x;
         const y = this.bombPlacement.y;
         this.explosions.push(new Explosion(x, y, this.assetLoader.getAsset('explosionSprite'), 20, bombRadius, 0.5));
-        if (this.soundEnabled && this.explosionSound) {
-            this.explosionSound.currentTime = 0;
-            this.explosionSound.play().catch(e => console.error("Error playing explosion sound:", e));
-        }
+        this.playSound('explosionSound');
         this.enemies.forEach(enemy => {
             if (!enemy.active) return;
             const enemyCenterX = enemy.x + enemy.width / 2;
