@@ -22,9 +22,9 @@ export class Game {
         this.deltaTime = 0;
 
         this.difficultySettings = {
-            easy:   { enemySpeed: 0.6, enemyHealth: 0.6, spawnRate: 1.4, moneyRate: 1.5, scoreRate: 1.0, expRate: 1.2 },
-            normal: { enemySpeed: 0.8, enemyHealth: 0.8, spawnRate: 1.2, moneyRate: 1.6, scoreRate: 1.0, expRate: 1.2 },
-            hard:   { enemySpeed: 1.0, enemyHealth: 1.0, spawnRate: 1.0, moneyRate: 1.7, scoreRate: 1.0, expRate: 1.2 }
+            easy:   { enemySpeed: 0.6, enemyHealth: 0.6, spawnRate: 1.2, moneyRate: 1.5, scoreRate: 1.0, expRate: 1.2 },
+            normal: { enemySpeed: 0.8, enemyHealth: 0.8, spawnRate: 1.2, moneyRate: 1.5, scoreRate: 1.0, expRate: 1.2 },
+            hard:   { enemySpeed: 1.0, enemyHealth: 1.0, spawnRate: 1.0, moneyRate: 1.5, scoreRate: 1.0, expRate: 1.2 }
         };
         this.currentDifficulty = 'normal';
 
