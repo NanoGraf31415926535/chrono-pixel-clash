@@ -33,7 +33,8 @@
             <h2>OPTIONS</h2>
             <div id="difficultyOptions" style="margin-bottom: 15px;">
                 <label for="difficultySelect">DIFFICULTY:</label>
-                <select id="difficultySelect">
+                <!-- FIX 4: The dropdown is now the primary way to select difficulty -->
+                <select id="difficultySelect" class="menu-button">
                     <option value="easy">Easy</option>
                     <option value="normal">Normal</option>
                     <option value="hard">Hard</option>
@@ -42,7 +43,7 @@
             </div>
             <button id="toggleSoundBtn" class="menu-button">TOGGLE SOUND (OFF)</button>
             <label for="volumeSlider" style="display: block; margin-top: 15px; color: var(--image-menu-text-color);">VOLUME:</label>
-            <input type="range" id="volumeSlider" min="0" max="100" value="50">
+            <input type="range" id="volumeSlider" min="0" max="100" value="50" class="menu-button">
             <button id="toggleFullscreenBtn" class="menu-button">TOGGLE FULLSCREEN</button>
             <button id="backToMainBtn" class="menu-button">BACK TO MAIN MENU</button>
         </div>
@@ -116,6 +117,13 @@
             <p>Final Score: <span id="victoryScore">0</span></p>
             <p style="margin-top: 20px;">Congratulations, Earth is safe!</p>
             <button id="victoryBackToMainBtn" class="menu-button">BACK TO MAIN MENU</button>
+        </div>
+
+        <!-- FIX 3: Added a proper HTML pause menu -->
+        <div id="pauseMenu" class="game-ui" style="display: none;">
+            <h2>PAUSED</h2>
+            <button id="resumeGameBtn" class="pixel-shooter-btn">Resume</button>
+            <button id="pauseToMainBtn" class="pixel-shooter-btn">Main Menu</button>
         </div>
 
         <div id="commanderPopup" class="commander-popup" style="display: none;">

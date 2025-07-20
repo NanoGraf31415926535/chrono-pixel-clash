@@ -898,7 +898,7 @@ canvas {
     z-index: 1;
 }
 
-.pixel-shooter-btn:hover, .pixel-shooter-btn:focus {
+.pixel-shooter-btn:hover, .pixel-shooter-btn:focus, .pixel-shooter-btn.selected {
     background: #00ffff;
     color: #1a0033;
     border-color: #ff00ff;
@@ -928,6 +928,26 @@ canvas {
 #mainMenu h1 {
     margin-bottom: 32px;
 }
+
+/* FIX 3: Added styles for the new pause menu */
+#pauseMenu {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    padding: 20px;
+    max-width: 400px;
+}
+
+#pauseMenu h2 {
+    color: var(--retro-neon-blue);
+    font-size: 2.5em;
+    margin-bottom: 20px;
+    text-shadow: 0 0 15px var(--retro-neon-blue), 3px 3px 0 #000;
+}
+
 
 /* === ACHIEVEMENTS MENU === */
 #achievementsMenu {

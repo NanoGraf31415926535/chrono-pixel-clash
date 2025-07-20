@@ -22,9 +22,9 @@ export class Game {
         this.deltaTime = 0;
 
         this.difficultySettings = {
-            easy:   { enemySpeed: 0.6, enemyHealth: 0.6, spawnRate: 1.2, moneyRate: 1.5, scoreRate: 1.0, expRate: 1.2 },
-            normal: { enemySpeed: 0.8, enemyHealth: 0.8, spawnRate: 1.2, moneyRate: 1.5, scoreRate: 1.0, expRate: 1.2 },
-            hard:   { enemySpeed: 1.0, enemyHealth: 1.0, spawnRate: 1.0, moneyRate: 1.5, scoreRate: 1.0, expRate: 1.2 }
+            easy:   { enemySpeed: 0.8, enemyHealth: 0.6, spawnRate: 1.2, moneyRate: 1.5, scoreRate: 1.0, expRate: 1.0 },
+            normal: { enemySpeed: 0.8, enemyHealth: 0.8, spawnRate: 1.2, moneyRate: 1.5, scoreRate: 1.0, expRate: 1.0 },
+            hard:   { enemySpeed: 1.0, enemyHealth: 1.0, spawnRate: 1.0, moneyRate: 1.5, scoreRate: 1.0, expRate: 1.0 }
         };
         this.currentDifficulty = 'normal';
 
@@ -77,16 +77,17 @@ export class Game {
 
         this.pendingLevelSelection = null;
 
+        // FIX 1: Adjusted scoreToClear values to allow for more resource gathering.
         this.levels = [
             {},
-            { enemySpawnRate: 2.2, enemySpeedMultiplier: 1.0, enemyHealthMultiplier: 1.0, maxEnemiesOnScreen: 10, scoreToClear: 150, newEnemyTypes: ['monster1'], background: 'terrain1', plot: 'Sector Alpha is under attack! Clear out the initial wave of invaders and secure our perimeter.', bossConfig: { spriteName: 'boss1Sprite', healthMultiplier: 1.5, speedMultiplier: 0.1, fireRate: 2, projectileSpeed: 150, projectileDamage: 10, specialAttack: 'scatterShot' } },
-            { enemySpawnRate: 2.1, enemySpeedMultiplier: 1.0, enemyHealthMultiplier: 1.1, maxEnemiesOnScreen: 12, scoreToClear: 250, newEnemyTypes: ['monster1', 'monster2'], background: 'terrain2', plot: 'The enemy is adapting. Push through the asteroid belt and eliminate their scout forces.', bossConfig: { spriteName: 'boss2Sprite', healthMultiplier: 2.5, speedMultiplier: 0.1, fireRate: 1.8, projectileSpeed: 160, projectileDamage: 12, specialAttack: 'summonMinions' } },
-            { enemySpawnRate: 2.0, enemySpeedMultiplier: 1.1, enemyHealthMultiplier: 1.2, maxEnemiesOnScreen: 14, scoreToClear: 400, newEnemyTypes: ['monster1', 'monster2', 'monster3'], background: 'terrain3', plot: 'Intel suggests a heavy enemy presence near the gas giant. Brace for a tougher fight!', bossConfig: { spriteName: 'boss3Sprite', healthMultiplier: 4, speedMultiplier: 0.1, fireRate: 1.6, projectileSpeed: 170, projectileDamage: 15, specialAttack: 'chargeBeam' } },
-            { enemySpawnRate: 1.9, enemySpeedMultiplier: 1.1, enemyHealthMultiplier: 1.3, maxEnemiesOnScreen: 16, scoreToClear: 600, newEnemyTypes: ['monster2', 'monster3', 'monster4'], background: 'terrain4', plot: 'They\'ve deployed new, faster units. Show them the might of the Alliance in the nebulae of Sector Gamma.', bossConfig: { spriteName: 'boss4Sprite', healthMultiplier: 5, speedMultiplier: 0.1, fireRate: 1.5, projectileSpeed: 180, projectileDamage: 18, specialAttack: 'laserBarrage' } },
-            { enemySpawnRate: 1.8, enemySpeedMultiplier: 1.2, enemyHealthMultiplier: 1.4, maxEnemiesOnScreen: 18, scoreToClear: 800, newEnemyTypes: ['monster3', 'monster4', 'monster5'], background: 'terrain1', plot: 'Deep space mining operations are threatened. Protect the resource extractors from the incoming swarm.', bossConfig: { spriteName: 'boss5Sprite', healthMultiplier: 7, speedMultiplier: 0.1, fireRate: 1.4, projectileSpeed: 190, projectileDamage: 20, specialAttack: 'summonMinions' } },
-            { enemySpawnRate: 1.7, enemySpeedMultiplier: 1.2, enemyHealthMultiplier: 1.5, maxEnemiesOnScreen: 20, scoreToClear: 1000, newEnemyTypes: ['monster4', 'monster5', 'monster6'], background: 'terrain2', plot: 'An enemy mothership has been sighted! Clear its escort to prepare for a full assault.', bossConfig: { spriteName: 'boss6Sprite', healthMultiplier: 8.5, speedMultiplier: 0.1, fireRate: 1.3, projectileSpeed: 200, projectileDamage: 22, specialAttack: 'scatterShot' } },
-            { enemySpawnRate: 1.6, enemySpeedMultiplier: 1.3, enemyHealthMultiplier: 1.6, maxEnemiesOnScreen: 22, scoreToClear: 1250, newEnemyTypes: ['monster5', 'monster6', 'monster7'], background: 'terrain3', plot: 'The enemy is retreating to their last stronghold. Pursue them through the treacherous debris field.', bossConfig: { spriteName: 'boss7Sprite', healthMultiplier: 10, speedMultiplier: 0.1, fireRate: 1.2, projectileSpeed: 210, projectileDamage: 25, specialAttack: 'laserBarrage' } },
-            { enemySpawnRate: 1.5, enemySpeedMultiplier: 1.3, enemyHealthMultiplier: 1.8, maxEnemiesOnScreen: 24, scoreToClear: 1500, newEnemyTypes: ['monster1', 'monster3', 'monster5', 'monster7'], background: 'terrain4', plot: 'This is it, pilot! The final push. Eliminate the remaining resistance and secure Earth\'s future!', bossConfig: { spriteName: 'boss8Sprite', healthMultiplier: 12, speedMultiplier: 0.1, fireRate: 1.1, projectileSpeed: 220, projectileDamage: 30, specialAttack: 'chargeBeam' } },
+            { enemySpawnRate: 2.2, enemySpeedMultiplier: 1.0, enemyHealthMultiplier: 1.0, maxEnemiesOnScreen: 10, scoreToClear: 200, newEnemyTypes: ['monster1'], background: 'terrain1', plot: 'Sector Alpha is under attack! Clear out the initial wave of invaders and secure our perimeter.', bossConfig: { spriteName: 'boss1Sprite', healthMultiplier: 1.5, speedMultiplier: 0.1, fireRate: 2, projectileSpeed: 150, projectileDamage: 10, specialAttack: 'scatterShot' } },
+            { enemySpawnRate: 2.1, enemySpeedMultiplier: 1.0, enemyHealthMultiplier: 1.1, maxEnemiesOnScreen: 12, scoreToClear: 600, newEnemyTypes: ['monster1', 'monster2'], background: 'terrain2', plot: 'The enemy is adapting. Push through the asteroid belt and eliminate their scout forces.', bossConfig: { spriteName: 'boss2Sprite', healthMultiplier: 2.5, speedMultiplier: 0.1, fireRate: 1.8, projectileSpeed: 160, projectileDamage: 12, specialAttack: 'summonMinions' } },
+            { enemySpawnRate: 2.0, enemySpeedMultiplier: 1.1, enemyHealthMultiplier: 1.2, maxEnemiesOnScreen: 14, scoreToClear: 1000, newEnemyTypes: ['monster1', 'monster2', 'monster3'], background: 'terrain3', plot: 'Intel suggests a heavy enemy presence near the gas giant. Brace for a tougher fight!', bossConfig: { spriteName: 'boss3Sprite', healthMultiplier: 4, speedMultiplier: 0.1, fireRate: 1.6, projectileSpeed: 170, projectileDamage: 15, specialAttack: 'chargeBeam' } },
+            { enemySpawnRate: 1.9, enemySpeedMultiplier: 1.1, enemyHealthMultiplier: 1.3, maxEnemiesOnScreen: 16, scoreToClear: 1400, newEnemyTypes: ['monster2', 'monster3', 'monster4'], background: 'terrain4', plot: 'They\'ve deployed new, faster units. Show them the might of the Alliance in the nebulae of Sector Gamma.', bossConfig: { spriteName: 'boss4Sprite', healthMultiplier: 5, speedMultiplier: 0.1, fireRate: 1.5, projectileSpeed: 180, projectileDamage: 18, specialAttack: 'laserBarrage' } },
+            { enemySpawnRate: 1.8, enemySpeedMultiplier: 1.2, enemyHealthMultiplier: 1.4, maxEnemiesOnScreen: 18, scoreToClear: 1800, newEnemyTypes: ['monster3', 'monster4', 'monster5'], background: 'terrain1', plot: 'Deep space mining operations are threatened. Protect the resource extractors from the incoming swarm.', bossConfig: { spriteName: 'boss5Sprite', healthMultiplier: 7, speedMultiplier: 0.1, fireRate: 1.4, projectileSpeed: 190, projectileDamage: 20, specialAttack: 'summonMinions' } },
+            { enemySpawnRate: 1.7, enemySpeedMultiplier: 1.2, enemyHealthMultiplier: 1.5, maxEnemiesOnScreen: 20, scoreToClear: 2200, newEnemyTypes: ['monster4', 'monster5', 'monster6'], background: 'terrain2', plot: 'An enemy mothership has been sighted! Clear its escort to prepare for a full assault.', bossConfig: { spriteName: 'boss6Sprite', healthMultiplier: 8.5, speedMultiplier: 0.1, fireRate: 1.3, projectileSpeed: 200, projectileDamage: 22, specialAttack: 'scatterShot' } },
+            { enemySpawnRate: 1.6, enemySpeedMultiplier: 1.3, enemyHealthMultiplier: 1.6, maxEnemiesOnScreen: 22, scoreToClear: 3000, newEnemyTypes: ['monster5', 'monster6', 'monster7'], background: 'terrain3', plot: 'The enemy is retreating to their last stronghold. Pursue them through the treacherous debris field.', bossConfig: { spriteName: 'boss7Sprite', healthMultiplier: 10, speedMultiplier: 0.1, fireRate: 1.2, projectileSpeed: 210, projectileDamage: 25, specialAttack: 'laserBarrage' } },
+            { enemySpawnRate: 1.5, enemySpeedMultiplier: 1.3, enemyHealthMultiplier: 1.8, maxEnemiesOnScreen: 24, scoreToClear: 3800, newEnemyTypes: ['monster1', 'monster3', 'monster5', 'monster7'], background: 'terrain4', plot: 'This is it, pilot! The final push. Eliminate the remaining resistance and secure Earth\'s future!', bossConfig: { spriteName: 'boss8Sprite', healthMultiplier: 12, speedMultiplier: 0.1, fireRate: 1.1, projectileSpeed: 220, projectileDamage: 30, specialAttack: 'chargeBeam' } },
             {}
         ];
 
@@ -213,10 +214,16 @@ export class Game {
         this.creditsBtn = document.getElementById('creditsBtn');
         
         this.optionsMenuDiv = document.getElementById('optionsMenu');
+        this.difficultySelect = document.getElementById('difficultySelect'); // FIX 4: Get the select element
         this.toggleSoundBtn = document.getElementById('toggleSoundBtn');
         this.volumeSlider = document.getElementById('volumeSlider');
         this.toggleFullscreenBtn = document.getElementById('toggleFullscreenBtn');
         this.backToMainBtn = document.getElementById('backToMainBtn');
+
+        // FIX 3: Get new pause menu elements
+        this.pauseMenuDiv = document.getElementById('pauseMenu');
+        this.resumeGameBtn = document.getElementById('resumeGameBtn');
+        this.pauseToMainBtn = document.getElementById('pauseToMainBtn');
 
         this.creditsScreenDiv = document.getElementById('creditsScreen');
         this.backToMainFromCreditsBtn = document.getElementById('backToMainFromCreditsBtn');
@@ -314,16 +321,9 @@ export class Game {
             if (btn) btn.addEventListener('click', () => this.setAchievementFilter(key));
         });
 
-        // Add new difficulty buttons for options menu
-        this.setEasyBtn = document.getElementById('setEasyBtn');
-        this.setNormalBtn = document.getElementById('setNormalBtn');
-        this.setHardBtn = document.getElementById('setHardBtn');
+        // FIX 4: Removed references to non-existent buttons. The select listener handles it now.
         this.currentDifficultyLabel = document.getElementById('currentDifficultyLabel');
 
-        // Add event listeners for new difficulty buttons
-        if (this.setEasyBtn) this.setEasyBtn.addEventListener('click', () => this.setDifficulty('easy'));
-        if (this.setNormalBtn) this.setNormalBtn.addEventListener('click', () => this.setDifficulty('normal'));
-        if (this.setHardBtn) this.setHardBtn.addEventListener('click', () => this.setDifficulty('hard'));
         // ... existing code ...
         // Update updateDifficultyLabel to highlight the selected button
         this.updateDifficultyLabel = function() {
@@ -402,7 +402,7 @@ export class Game {
         window.addEventListener('resize', this.handleResize.bind(this));
 
         // Add sound to all button clicks
-        document.querySelectorAll('.menu-button').forEach(button => {
+        document.querySelectorAll('.menu-button, .pixel-shooter-btn').forEach(button => {
             button.addEventListener('click', () => this.playSound('menuClick'));
             button.addEventListener('mouseenter', () => this.playSound('menuHover'));
         });
@@ -410,20 +410,26 @@ export class Game {
         if (this.startGameBtn) this.startGameBtn.addEventListener('click', () => { this.showMenu(GAME_STATES.LEVEL_MAP); this.playSound('menuConfirm'); });
         
         if (this.continueGameBtn) this.continueGameBtn.addEventListener('click', () => {
-            this.loadGame();
-            this.showMenu(GAME_STATES.LEVEL_MAP);
+            this.continueGame(); // Use continueGame which calls loadGame
             this.playSound('menuConfirm');
         });
         
         if (this.optionsBtn) this.optionsBtn.addEventListener('click', () => this.showMenu(GAME_STATES.OPTIONS));
         if (this.creditsBtn) this.creditsBtn.addEventListener('click', () => this.showMenu(GAME_STATES.CREDITS));
         
+        // FIX 4: Add event listener for the difficulty dropdown.
+        if (this.difficultySelect) this.difficultySelect.addEventListener('change', (e) => this.setDifficulty(e.target.value));
+
         if (this.toggleSoundBtn) this.toggleSoundBtn.addEventListener('click', () => this.toggleSound());
         if (this.volumeSlider) this.volumeSlider.addEventListener('input', (e) => this.setVolume(e.target.value / 100));
         if (this.toggleFullscreenBtn) this.toggleFullscreenBtn.addEventListener('click', () => this.toggleFullScreen());
         if (this.backToMainBtn) this.backToMainBtn.addEventListener('click', () => this.returnToMainMenu());
         if (this.backToMainFromCreditsBtn) this.backToMainFromCreditsBtn.addEventListener('click', () => this.returnToMainMenu());
         
+        // FIX 3: Add event listeners for new pause menu buttons
+        if (this.resumeGameBtn) this.resumeGameBtn.addEventListener('click', () => this.togglePause());
+        if (this.pauseToMainBtn) this.pauseToMainBtn.addEventListener('click', () => this.returnToMainMenu());
+
         if (this.closeShipyardBtn) this.closeShipyardBtn.addEventListener('click', () => this.shop.closeMenu());
         if (this.closeUpgradeBtn) this.closeUpgradeBtn.addEventListener('click', () => this.shop.closeMenu());
         
@@ -571,6 +577,8 @@ export class Game {
 
     startGame(levelIndex) {
         this.currentLevel = levelIndex;
+        // FIX 1: Score is no longer reset here to make it cumulative.
+        // this.score = 0; 
         this.initializeLevel();
         this.initializeBase();
         this.initializePlayer();
@@ -591,6 +599,8 @@ export class Game {
             this.showMenu(GAME_STATES.LEVEL_MAP);
         } else {
             console.log("No saved game found to continue.");
+            // If no save, just go to level map like a new game
+            this.showMenu(GAME_STATES.LEVEL_MAP);
         }
     }
 
@@ -609,12 +619,14 @@ export class Game {
             soundEnabled: this.soundEnabled,
             gameVolume: this.gameVolume,
             currentDifficulty: this.currentDifficulty,
-            isBossPhase: this.isBossPhase,
-            bossHealth: this.boss ? this.boss.health : null,
+            // We don't save mid-level state like boss phase, as continue brings you to the map.
+            // isBossPhase: this.isBossPhase,
+            // bossHealth: this.boss ? this.boss.health : null,
             unlockedAchievementIds: Array.from(this.achievementManager.unlockedIds) // Save achievements
         };
         try {
             localStorage.setItem('spaceInvadersGameState', JSON.stringify(gameState));
+            console.log("Game saved!");
         } catch (e) {
             console.error('Error saving game:', e);
         }
@@ -634,6 +646,8 @@ export class Game {
                 this.currentLevel = gameState.currentLevel || 1;
                 this.completedLevels = gameState.completedLevels || [];
                 this.currentDifficulty = gameState.currentDifficulty || 'normal';
+                this.soundEnabled = gameState.soundEnabled !== undefined ? gameState.soundEnabled : true;
+                this.gameVolume = gameState.gameVolume !== undefined ? gameState.gameVolume : 0.5;
                 this.currentShipType = gameState.currentShipType || 'ship1';
                 this.ownedShips = gameState.ownedShips || ['ship1'];
                 this.shipUpgrades = gameState.shipUpgrades || { 'ship1': { damage: 0, fireRate: 0, health: 0, speed: 0 } };
@@ -644,19 +658,17 @@ export class Game {
                 }
 
                 this.updateShipStats();
+                this.updateDifficultyLabel(); // Make sure UI reflects loaded difficulty
 
                 if (this.toggleSoundBtn) this.toggleSoundBtn.textContent = `TOGGLE SOUND (${this.soundEnabled ? 'ON' : 'OFF'})`;
                 if (this.volumeSlider) this.volumeSlider.value = this.gameVolume * 100;
-                this.setVolume(this.gameVolume);
+                this.setVolume(this.gameVolume, true); // Update volume without saving again
                 
                 const maxCompletedLevel = this.completedLevels.length > 0 ? Math.max(...this.completedLevels) : 0;
                 this.currentLevel = Math.min(maxCompletedLevel + 1, this.levels.length - 1);
                 if (this.currentLevel === 0) this.currentLevel = 1;
 
-                this.isBossPhase = gameState.isBossPhase || false;
-                if (this.isBossPhase && gameState.bossHealth !== null) {
-                }
-
+                console.log("Game loaded!");
                 return true;
             }
         } catch (e) {
@@ -670,7 +682,6 @@ export class Game {
         const savedGameExists = localStorage.getItem('spaceInvadersGameState') !== null;
         if (this.continueGameBtn) {
             this.continueGameBtn.style.display = savedGameExists ? 'block' : 'none';
-            this.continueGameBtn.disabled = !savedGameExists;
         }
     }
 
@@ -897,9 +908,10 @@ export class Game {
         if (this.victoryScreenDiv) this.victoryScreenDiv.style.display = 'none';
         if (this.loadingTextDiv) this.loadingTextDiv.style.display = 'none';
         if (this.difficultySelectionDiv) this.difficultySelectionDiv.style.display = 'none';
-        if (this.startGameBtn) this.startGameBtn.style.display = 'none';
+        if (this.startGameBtn) this.startGameBtn.style.display = 'block'; // Show by default, hide later if needed
         if (this.levelMapScreenDiv) this.levelMapScreenDiv.style.display = 'none';
         if (this.achievementsMenuDiv) this.achievementsMenuDiv.style.display = 'none';
+        if (this.pauseMenuDiv) this.pauseMenuDiv.style.display = 'none'; // Hide pause menu
 
         this.currentState = menuState;
         this.selectedMenuButtonIndex = 0;
@@ -907,7 +919,6 @@ export class Game {
         switch (menuState) {
             case GAME_STATES.MAIN_MENU:
                 if (this.mainMenuDiv) this.mainMenuDiv.style.display = 'block';
-                if (this.startGameBtn) this.startGameBtn.style.display = 'block';
                 this.updateMainMenuButtons();
                 this.currentMenuButtons = [
                     this.startGameBtn,
@@ -916,7 +927,7 @@ export class Game {
                 break;
             case GAME_STATES.OPTIONS:
                 if (this.optionsMenuDiv) this.optionsMenuDiv.style.display = 'block';
-                this.currentMenuButtons = [this.toggleSoundBtn, this.volumeSlider, this.toggleFullscreenBtn, this.backToMainBtn].filter(Boolean);
+                this.currentMenuButtons = [this.difficultySelect, this.toggleSoundBtn, this.volumeSlider, this.toggleFullscreenBtn, this.backToMainBtn].filter(Boolean);
                 this.updateDifficultyLabel();
                 break;
             case GAME_STATES.CREDITS:
@@ -963,6 +974,10 @@ export class Game {
                 this.switchAchievementsStats('achievements');
                 this.currentMenuButtons = [this.backToMainFromAchievementsBtn].filter(Boolean);
                 break;
+            case GAME_STATES.PAUSED:
+                if (this.pauseMenuDiv) this.pauseMenuDiv.style.display = 'block';
+                this.currentMenuButtons = [this.resumeGameBtn, this.pauseToMainBtn].filter(Boolean);
+                break;
             default:
                 this.currentMenuButtons = [];
                 break;
@@ -971,8 +986,9 @@ export class Game {
     }
     
     updateSelectedMenuButton() {
-        document.querySelectorAll('.menu-button, .level-button').forEach(btn => btn.classList.remove('selected'));
+        document.querySelectorAll('.menu-button, .level-button, .pixel-shooter-btn').forEach(btn => btn.classList.remove('selected'));
         if (this.volumeSlider) this.volumeSlider.classList.remove('selected');
+        if (this.difficultySelect) this.difficultySelect.classList.remove('selected');
 
         if (this.currentMenuButtons.length > 0 && this.currentMenuButtons[this.selectedMenuButtonIndex]) {
             this.currentMenuButtons[this.selectedMenuButtonIndex].classList.add('selected');
@@ -982,7 +998,7 @@ export class Game {
     
     update(deltaTime) {
         if (this.currentState === GAME_STATES.SHOP) return;
-        if (this.currentState === GAME_STATES.PAUSED) return; // <--- Add this line to fully pause game logic
+        if (this.currentState === GAME_STATES.PAUSED) return; // Fully pause game logic
 
         // Check for achievements
         const unlockedAchievements = this.achievementManager.checkAll();
@@ -1205,10 +1221,11 @@ export class Game {
         
         this.drawStaticBackground();
 
-        if (this.currentState === GAME_STATES.PLAYING || this.currentState === GAME_STATES.BOSS_FIGHT) {
+        if (this.currentState === GAME_STATES.PLAYING || this.currentState === GAME_STATES.BOSS_FIGHT || this.currentState === GAME_STATES.PAUSED) {
             this.drawPlayingScreen();
-        } else if (this.currentState === GAME_STATES.PAUSED) {
-            this.drawPlayingScreen();
+        }
+        
+        if (this.currentState === GAME_STATES.PAUSED) {
             this.drawPauseScreen();
         }
     }
@@ -1341,16 +1358,10 @@ export class Game {
         }
     }
 
+    // FIX 3: This now only draws the dark overlay. The HTML menu handles the text and buttons.
     drawPauseScreen() {
         this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-        this.ctx.fillStyle = '#FFFFFF';
-        this.ctx.font = '40px "Press Start 2P", monospace';
-        this.ctx.textAlign = 'center';
-        this.ctx.fillText('PAUSED', this.canvas.width / 2, this.canvas.height / 2 - 20);
-        this.ctx.font = '20px "Press Start 2P", monospace';
-        this.ctx.fillText('Press ESC or P to Resume', this.canvas.width / 2, this.canvas.height / 2 + 30);
-        this.ctx.fillText('Press M for Main Menu', this.canvas.width / 2, this.canvas.height / 2 + 70);
     }
     
     activateCurrentShipAbility() {
@@ -1531,21 +1542,19 @@ export class Game {
             }
         }
 
+        // FIX 3: Pause is now handled by a toggle function.
         if (e.key === 'Escape' || e.key === 'p') {
-            if (this.currentState === GAME_STATES.PLAYING || this.currentState === GAME_STATES.BOSS_FIGHT) {
-                this.currentState = GAME_STATES.PAUSED;
-                if (this.bgMusic && this.soundEnabled) this.bgMusic.pause();
-            } else if (this.currentState === GAME_STATES.PAUSED) {
-                this.currentState = this.isBossPhase ? GAME_STATES.BOSS_FIGHT : GAME_STATES.PLAYING;
-                if (this.bgMusic && this.soundEnabled) this.bgMusic.play().catch(e => console.error(e));
+            if (this.currentState === GAME_STATES.PLAYING || this.currentState === GAME_STATES.BOSS_FIGHT || this.currentState === GAME_STATES.PAUSED) {
+                this.togglePause();
             }
         }
         
-        if (e.key === 'm' || e.key === 'M') {
-            if (this.currentState !== GAME_STATES.MAIN_MENU && this.currentState !== GAME_STATES.LOADING) {
-                 this.returnToMainMenu();
-            }
-        }
+        // FIX 3: Removed 'M' key functionality to leave the level. This is now handled by the pause menu button.
+        // if (e.key === 'm' || e.key === 'M') {
+        //     if (this.currentState !== GAME_STATES.MAIN_MENU && this.currentState !== GAME_STATES.LOADING) {
+        //          this.returnToMainMenu();
+        //     }
+        // }
     }
 
     handleKeyUp(e) {
@@ -1578,7 +1587,25 @@ export class Game {
         }
     }
 
+    // FIX 3: New function to handle pausing and the pause menu UI.
+    togglePause() {
+        if (this.currentState === GAME_STATES.PLAYING || this.currentState === GAME_STATES.BOSS_FIGHT) {
+            const previousState = this.currentState;
+            this.showMenu(GAME_STATES.PAUSED);
+            this.currentState.previous = previousState; // Remember what state we were in
+            if (this.bgMusic && this.soundEnabled) this.bgMusic.pause();
+        } else if (this.currentState === GAME_STATES.PAUSED) {
+            this.showMenu(this.currentState.previous || GAME_STATES.PLAYING); // Return to previous state
+            if (this.bgMusic && this.soundEnabled) this.bgMusic.play().catch(e => console.error(e));
+        }
+    }
+
     returnToMainMenu(forceReset = false) {
+        // FIX 2: Save game progress when returning to the main menu from a level.
+        if (this.currentState === GAME_STATES.PLAYING || this.currentState === GAME_STATES.BOSS_FIGHT || this.currentState === GAME_STATES.PAUSED) {
+            this.saveGame();
+        }
+
         if (forceReset) {
             this.resetGame(true);
         }
@@ -1963,7 +1990,7 @@ export class Game {
         this.saveGame();
     }
 
-    setVolume(volume) {
+    setVolume(volume, fromLoad = false) {
         this.gameVolume = volume;
         const effectiveVolume = this.soundEnabled ? this.gameVolume : 0;
 
@@ -1982,8 +2009,9 @@ export class Game {
                 audio.volume = effectiveVolume;
             });
         }
-
-        this.saveGame();
+        if (!fromLoad) {
+            this.saveGame();
+        }
     }
 
     populateLevelMap() {
@@ -2390,8 +2418,8 @@ export class Game {
 
     setDifficulty(difficulty) {
         this.currentDifficulty = difficulty;
-        this.saveGame();
         this.updateDifficultyLabel();
+        this.saveGame(); // Save difficulty setting immediately
     }
 
     updateDifficultyLabel() {
