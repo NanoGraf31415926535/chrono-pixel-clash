@@ -77,7 +77,6 @@ export class Game {
 
         this.pendingLevelSelection = null;
 
-        // FIX 1: Adjusted scoreToClear values to allow for more resource gathering.
         this.levels = [
             {},
             { enemySpawnRate: 2.2, enemySpeedMultiplier: 1.0, enemyHealthMultiplier: 1.0, maxEnemiesOnScreen: 10, scoreToClear: 200, newEnemyTypes: ['monster1'], background: 'terrain1', plot: 'Sector Alpha is under attack! Clear out the initial wave of invaders and secure our perimeter.', bossConfig: { spriteName: 'boss1Sprite', healthMultiplier: 1.5, speedMultiplier: 0.1, fireRate: 2, projectileSpeed: 150, projectileDamage: 10, specialAttack: 'scatterShot' } },
@@ -149,7 +148,7 @@ export class Game {
                 cost: 1000,
                 baseDamage: 2.5, baseFireRate: 0.12, baseProjectileSpeed: 500, baseProjectileWidth: 9, baseProjectileHeight: 18, baseNumProjectiles: 3,
                 baseSpeed: 280, baseHealth: 140,
-                ability: { name: 'Shield Recharge', description: 'Instantly restore 30 base health.', cooldown: 20 },
+                ability: { name: 'Shield Recharge', description: "Instantly restore 30 of your ship's health.", cooldown: 20 },
                 upgrades: {
                     damage: { maxLevel: 5, costs: [60, 120, 240, 480, 960], bonuses: [1.2, 1.2, 1.3, 1.5, 2.0] },
                     fireRate: { maxLevel: 4, costs: [65, 130, 260, 520], bonuses: [0.02, 0.02, 0.03, 0.03] },
@@ -194,6 +193,9 @@ export class Game {
         this.shipUpgrades = {
             'ship1': { damage: 0, fireRate: 0, health: 0, speed: 0 }
         };
+        
+        // NEW: Object to store the current health of each owned ship.
+        this.shipHealths = {};
 
         this.boss = null;
         this.isBossPhase = false;
@@ -214,13 +216,12 @@ export class Game {
         this.creditsBtn = document.getElementById('creditsBtn');
         
         this.optionsMenuDiv = document.getElementById('optionsMenu');
-        this.difficultySelect = document.getElementById('difficultySelect'); // FIX 4: Get the select element
+        this.difficultySelect = document.getElementById('difficultySelect');
         this.toggleSoundBtn = document.getElementById('toggleSoundBtn');
         this.volumeSlider = document.getElementById('volumeSlider');
         this.toggleFullscreenBtn = document.getElementById('toggleFullscreenBtn');
         this.backToMainBtn = document.getElementById('backToMainBtn');
 
-        // FIX 3: Get new pause menu elements
         this.pauseMenuDiv = document.getElementById('pauseMenu');
         this.resumeGameBtn = document.getElementById('resumeGameBtn');
         this.pauseToMainBtn = document.getElementById('pauseToMainBtn');
@@ -231,6 +232,7 @@ export class Game {
         this.shopHangarDiv = document.getElementById('shopHangar');
         this.closeShipyardBtn = document.getElementById('closeShipyardBtn');
         this.closeUpgradeBtn = document.getElementById('closeUpgradeBtn');
+        this.closeRepairBtn = document.getElementById('closeRepairBtn'); // NEW
 
         this.levelMapScreenDiv = document.getElementById('levelMapScreen');
         this.levelButtonsContainer = document.getElementById('levelButtonsContainer');
@@ -252,12 +254,11 @@ export class Game {
         this.soundEnabled = true;
         this.bgMusic = null;
         this.gameVolume = 0.5;
-        this.isAudioUnlocked = false; // Flag to track user interaction for audio playback
+        this.isAudioUnlocked = false;
 
-        // Sound pools and individual sound references
         this.sounds = {};
         this.soundPools = {};
-        this.soundPoolSize = 10; // Number of audio instances for pooled sounds
+        this.soundPoolSize = 10;
 
         this.currentMenuButtons = [];
         this.selectedMenuButtonIndex = 0;
@@ -281,7 +282,6 @@ export class Game {
         this.typingInterval = null;
         this.currentTypedText = '';
         
-        // Get the power-up indicators container element
         this.powerUpIndicatorsDiv = document.getElementById('powerUpIndicators');
         
         if (this.commanderNextBtn) {
@@ -309,9 +309,8 @@ export class Game {
         if (this.showAchievementsBtn) this.showAchievementsBtn.addEventListener('click', () => this.switchAchievementsStats('achievements'));
         if (this.showStatsBtn) this.showStatsBtn.addEventListener('click', () => this.switchAchievementsStats('stats'));
 
-        this.achievementFilter = 'all'; // For filtering achievements
+        this.achievementFilter = 'all';
         this.achievementFilterBtns = {};
-        // Add filter buttons for achievements
         this.achievementFilterBtns = {
             all: document.getElementById('filterAllAchievementsBtn'),
             unlocked: document.getElementById('filterUnlockedAchievementsBtn'),
@@ -321,11 +320,8 @@ export class Game {
             if (btn) btn.addEventListener('click', () => this.setAchievementFilter(key));
         });
 
-        // FIX 4: Removed references to non-existent buttons. The select listener handles it now.
         this.currentDifficultyLabel = document.getElementById('currentDifficultyLabel');
 
-        // ... existing code ...
-        // Update updateDifficultyLabel to highlight the selected button
         this.updateDifficultyLabel = function() {
             if (this.currentDifficultyLabel) {
                 let label = '';
@@ -342,10 +338,6 @@ export class Game {
         }.bind(this);
     }
 
-    /**
-     * Plays a sound effect, using a pooling system for frequently played sounds.
-     * @param {string} soundName - The name of the sound to play (e.g., 'explosionSound').
-     */
     playSound(soundName) {
         if (!this.soundEnabled || !this.isAudioUnlocked) return;
 
@@ -362,11 +354,9 @@ export class Game {
     }
 
     init() {
-        // Unlock audio context on the first user interaction
         const unlockAudio = () => {
             if (this.isAudioUnlocked) return;
             this.isAudioUnlocked = true;
-            // Attempt to play and pause all audio to unlock it
             for (const soundName in this.sounds) {
                 if (this.sounds[soundName]) {
                     this.sounds[soundName].play().then(() => this.sounds[soundName].pause()).catch(() => {});
@@ -401,7 +391,6 @@ export class Game {
         window.addEventListener('keyup', this.handleKeyUp.bind(this));
         window.addEventListener('resize', this.handleResize.bind(this));
 
-        // Add sound to all button clicks
         document.querySelectorAll('.menu-button, .pixel-shooter-btn').forEach(button => {
             button.addEventListener('click', () => this.playSound('menuClick'));
             button.addEventListener('mouseenter', () => this.playSound('menuHover'));
@@ -410,14 +399,13 @@ export class Game {
         if (this.startGameBtn) this.startGameBtn.addEventListener('click', () => { this.showMenu(GAME_STATES.LEVEL_MAP); this.playSound('menuConfirm'); });
         
         if (this.continueGameBtn) this.continueGameBtn.addEventListener('click', () => {
-            this.continueGame(); // Use continueGame which calls loadGame
+            this.continueGame();
             this.playSound('menuConfirm');
         });
         
         if (this.optionsBtn) this.optionsBtn.addEventListener('click', () => this.showMenu(GAME_STATES.OPTIONS));
         if (this.creditsBtn) this.creditsBtn.addEventListener('click', () => this.showMenu(GAME_STATES.CREDITS));
         
-        // FIX 4: Add event listener for the difficulty dropdown.
         if (this.difficultySelect) this.difficultySelect.addEventListener('change', (e) => this.setDifficulty(e.target.value));
 
         if (this.toggleSoundBtn) this.toggleSoundBtn.addEventListener('click', () => this.toggleSound());
@@ -426,12 +414,18 @@ export class Game {
         if (this.backToMainBtn) this.backToMainBtn.addEventListener('click', () => this.returnToMainMenu());
         if (this.backToMainFromCreditsBtn) this.backToMainFromCreditsBtn.addEventListener('click', () => this.returnToMainMenu());
         
-        // FIX 3: Add event listeners for new pause menu buttons
         if (this.resumeGameBtn) this.resumeGameBtn.addEventListener('click', () => this.togglePause());
         if (this.pauseToMainBtn) this.pauseToMainBtn.addEventListener('click', () => this.returnToMainMenu());
 
         if (this.closeShipyardBtn) this.closeShipyardBtn.addEventListener('click', () => this.shop.closeMenu());
         if (this.closeUpgradeBtn) this.closeUpgradeBtn.addEventListener('click', () => this.shop.closeMenu());
+        if (this.closeRepairBtn) this.closeRepairBtn.addEventListener('click', () => this.shop.closeMenu()); // NEW
+
+        // NEW: Event listeners for repair buttons
+        const repairShipBtn = document.getElementById('repairShipBtn');
+        if (repairShipBtn) repairShipBtn.addEventListener('click', () => this.handleShopAction('repairShip'));
+        const repairBaseBtn = document.getElementById('repairBaseBtn');
+        if (repairBaseBtn) repairBaseBtn.addEventListener('click', () => this.handleShopAction('repairBase'));
         
         if (this.gameOverBackToMainBtn) this.gameOverBackToMainBtn.addEventListener('click', () => this.returnToMainMenu(true));
         if (this.victoryBackToMainBtn) this.victoryBackToMainBtn.addEventListener('click', () => this.returnToMainMenu(true));
@@ -449,8 +443,6 @@ export class Game {
         this.initializeAchievements();
         this.loadAssets();
         this.updateShipStats();
-
-        // Call updateDifficultyLabel in init and when showing options
         this.updateDifficultyLabel();
     }
 
@@ -463,6 +455,7 @@ export class Game {
         this.assetLoader.loadImage('shipyard_console', 'assets/images/sprites/shipyard_console.png');
         this.assetLoader.loadImage('upgrade_terminal', 'assets/images/sprites/upgrade_terminal.png');
         this.assetLoader.loadImage('starmap_table', 'assets/images/sprites/starmap_table.png');
+        this.assetLoader.loadImage('repair_bay_console', 'assets/images/sprites/repair_bay_console.png'); // NEW
 
         // Achievement Icons
         this.assetLoader.loadImage('ach_first_kill', 'assets/images/achievements/ach_first_kill.png');
@@ -475,7 +468,6 @@ export class Game {
         this.assetLoader.loadImage('ach_shopaholic', 'assets/images/achievements/ach_shopaholic.png');
         this.assetLoader.loadImage('ach_survivor', 'assets/images/achievements/ach_survivor.png');
         this.assetLoader.loadImage('ach_destroyer', 'assets/images/achievements/ach_destroyer.png');
-
 
         for (let i = 1; i <= 8; i++) {
             this.assetLoader.loadImage(`boss${i}Sprite`, `assets/images/sprites/Boss_${i}.png`);
@@ -495,7 +487,6 @@ export class Game {
             this.assetLoader.loadImage(`ship${i}Sprite`, `assets/images/Starships/Ship_${i}.png`);
         }
 
-        // Load existing and new sounds
         this.assetLoader.loadAudio('bgMusic', 'assets/audio/bg_music.mp3');
         this.assetLoader.loadAudio('shotSound', 'assets/audio/shot.mp3');
         this.assetLoader.loadAudio('explosionSound', 'assets/audio/explosion.mp3');
@@ -515,7 +506,6 @@ export class Game {
             const randomIndex = Math.floor(Math.random() * this.terrainSpriteNames.length);
             this.currentBackgroundSpriteName = this.terrainSpriteNames[randomIndex];
             
-            // Assign sounds and create pools
             this.bgMusic = this.assetLoader.getAsset('bgMusic');
             if (this.bgMusic) {
                 this.bgMusic.loop = true;
@@ -528,7 +518,6 @@ export class Game {
                 if (this.sounds[name]) this.sounds[name].volume = this.gameVolume;
             });
 
-            // Create a sound pool for explosions
             this.soundPools['explosionSound'] = { audios: [], currentIndex: 0 };
             const explosionAsset = this.assetLoader.getAsset('explosionSound');
             if (explosionAsset) {
@@ -577,8 +566,6 @@ export class Game {
 
     startGame(levelIndex) {
         this.currentLevel = levelIndex;
-        // FIX 1: Score is no longer reset here to make it cumulative.
-        // this.score = 0; 
         this.initializeLevel();
         this.initializeBase();
         this.initializePlayer();
@@ -599,7 +586,6 @@ export class Game {
             this.showMenu(GAME_STATES.LEVEL_MAP);
         } else {
             console.log("No saved game found to continue.");
-            // If no save, just go to level map like a new game
             this.showMenu(GAME_STATES.LEVEL_MAP);
         }
     }
@@ -609,20 +595,17 @@ export class Game {
             score: this.score,
             money: this.money,
             experience: this.experience,
-            playerHealth: this.playerHealth,
             baseHealth: this.base.health,
             currentLevel: this.currentLevel,
             completedLevels: this.completedLevels,
             currentShipType: this.currentShipType,
             ownedShips: this.ownedShips,
             shipUpgrades: this.shipUpgrades,
+            shipHealths: this.shipHealths, // SAVE individual ship health
             soundEnabled: this.soundEnabled,
             gameVolume: this.gameVolume,
             currentDifficulty: this.currentDifficulty,
-            // We don't save mid-level state like boss phase, as continue brings you to the map.
-            // isBossPhase: this.isBossPhase,
-            // bossHealth: this.boss ? this.boss.health : null,
-            unlockedAchievementIds: Array.from(this.achievementManager.unlockedIds) // Save achievements
+            unlockedAchievementIds: Array.from(this.achievementManager.unlockedIds)
         };
         try {
             localStorage.setItem('spaceInvadersGameState', JSON.stringify(gameState));
@@ -641,7 +624,6 @@ export class Game {
                 this.score = gameState.score || 0;
                 this.money = gameState.money || 0;
                 this.experience = gameState.experience || 0;
-                this.playerHealth = gameState.playerHealth || 100;
                 this.base.health = gameState.baseHealth || this.base.maxHealth;
                 this.currentLevel = gameState.currentLevel || 1;
                 this.completedLevels = gameState.completedLevels || [];
@@ -651,18 +633,28 @@ export class Game {
                 this.currentShipType = gameState.currentShipType || 'ship1';
                 this.ownedShips = gameState.ownedShips || ['ship1'];
                 this.shipUpgrades = gameState.shipUpgrades || { 'ship1': { damage: 0, fireRate: 0, health: 0, speed: 0 } };
+                this.shipHealths = gameState.shipHealths || {}; // LOAD individual ship health
+
+                // Ensure all owned ships have a health value.
+                this.ownedShips.forEach(shipId => {
+                    if (this.shipHealths[shipId] === undefined) {
+                        this.shipHealths[shipId] = this.calculateMaxHealth(shipId);
+                    }
+                });
                 
-                // Load achievements
                 if (gameState.unlockedAchievementIds) {
                     this.achievementManager.loadUnlocked(new Set(gameState.unlockedAchievementIds));
                 }
 
                 this.updateShipStats();
-                this.updateDifficultyLabel(); // Make sure UI reflects loaded difficulty
+                // Set player health from the loaded persistent data
+                this.playerHealth = this.shipHealths[this.currentShipType] || this.currentShipStats.health;
+
+                this.updateDifficultyLabel();
 
                 if (this.toggleSoundBtn) this.toggleSoundBtn.textContent = `TOGGLE SOUND (${this.soundEnabled ? 'ON' : 'OFF'})`;
                 if (this.volumeSlider) this.volumeSlider.value = this.gameVolume * 100;
-                this.setVolume(this.gameVolume, true); // Update volume without saving again
+                this.setVolume(this.gameVolume, true);
                 
                 const maxCompletedLevel = this.completedLevels.length > 0 ? Math.max(...this.completedLevels) : 0;
                 this.currentLevel = Math.min(maxCompletedLevel + 1, this.levels.length - 1);
@@ -685,6 +677,18 @@ export class Game {
         }
     }
 
+    calculateMaxHealth(shipType) {
+        const config = this.shipConfigs[shipType];
+        const upgrades = this.shipUpgrades[shipType] || { health: 0 };
+        if (!config) return 100;
+
+        let health = config.baseHealth;
+        if (upgrades.health > 0) {
+            health += config.upgrades.health.bonuses.slice(0, upgrades.health).reduce((sum, val) => sum + val, 0);
+        }
+        return health;
+    }
+
     updateShipStats() {
         const config = this.shipConfigs[this.currentShipType];
         const upgrades = this.shipUpgrades[this.currentShipType];
@@ -698,7 +702,7 @@ export class Game {
         let fireRate = config.baseFireRate;
         let projectileSpeed = config.baseProjectileSpeed;
         let speed = config.baseSpeed;
-        let health = config.baseHealth;
+        let health = this.calculateMaxHealth(this.currentShipType);
         let numProjectiles = config.baseNumProjectiles;
 
         if (upgrades.damage > 0) {
@@ -706,9 +710,6 @@ export class Game {
         }
         if (upgrades.fireRate > 0) {
             fireRate -= config.upgrades.fireRate.bonuses.slice(0, upgrades.fireRate).reduce((sum, val) => sum + val, 0);
-        }
-        if (upgrades.health > 0) {
-            health += config.upgrades.health.bonuses.slice(0, upgrades.health).reduce((sum, val) => sum + val, 0);
         }
         if (upgrades.speed > 0) {
             speed += config.upgrades.speed.bonuses.slice(0, upgrades.speed).reduce((sum, val) => sum + val, 0);
@@ -725,9 +726,9 @@ export class Game {
             health: health,
             ability: config.ability
         };
-        if (this.playerHealth > this.currentShipStats.health) {
-            this.playerHealth = this.currentShipStats.health;
-        }
+
+        // Health is now persistent, so we don't reset it here.
+        // It's loaded in loadGame or set when equipping a ship.
         if (this.player) {
             this.player.speed = this.currentShipStats.speed;
         }
@@ -746,13 +747,16 @@ export class Game {
         const shipSprite = this.assetLoader.getAsset(config.spriteName);
         if(previewImage && shipSprite) previewImage.src = shipSprite.src;
         if(previewName) previewName.textContent = shipToDisplay.replace('ship', 'Ship ');
-        if(previewStats) previewStats.innerHTML = `
-            <li>Damage: ${config.baseDamage.toFixed(1)}</li>
-            <li>Fire Rate: ${(1/config.baseFireRate).toFixed(1)}/s</li>
-            <li>Projectiles: ${config.baseNumProjectiles}</li>
-            <li>Health: ${config.baseHealth}</li>
-            <li>Speed: ${config.baseSpeed}</li>
-        `;
+        if(previewStats) {
+            const maxHealth = this.calculateMaxHealth(shipToDisplay);
+            previewStats.innerHTML = `
+                <li>Damage: ${config.baseDamage.toFixed(1)}</li>
+                <li>Fire Rate: ${(1/config.baseFireRate).toFixed(1)}/s</li>
+                <li>Projectiles: ${config.baseNumProjectiles}</li>
+                <li>Health: ${maxHealth}</li>
+                <li>Speed: ${config.baseSpeed}</li>
+            `;
+        }
         if(previewAbility) previewAbility.innerHTML = `<strong>${config.ability.name}:</strong> ${config.ability.description}`;
     }
 
@@ -767,6 +771,7 @@ export class Game {
         if (currentMoneyDisplayUpgrade) currentMoneyDisplayUpgrade.textContent = this.money;
         if (upgradeShipName) upgradeShipName.textContent = this.currentShipType.replace('ship', 'Ship ');
 
+        // Shipyard Menu
         const shipPurchaseColumn = document.getElementById('shipPurchaseColumn');
         if (shipPurchaseColumn) {
             shipPurchaseColumn.innerHTML = '';
@@ -794,6 +799,7 @@ export class Game {
             });
         }
 
+        // Upgrade Menu
         const shipUpgradeColumn = document.getElementById('shipUpgradeColumn');
         if (shipUpgradeColumn) {
             shipUpgradeColumn.innerHTML = '';
@@ -845,12 +851,52 @@ export class Game {
                 }
             }
         }
+
+        // NEW: Repair Menu
+        const repairMenu = document.getElementById('repairMenu');
+        if (repairMenu) {
+            const moneyDisplay = document.getElementById('currentMoneyDisplayRepair');
+            if (moneyDisplay) moneyDisplay.textContent = this.money;
+
+            const repairShipBtn = document.getElementById('repairShipBtn');
+            const repairShipInfo = document.getElementById('repairShipInfo');
+            if (repairShipBtn && repairShipInfo) {
+                const shipMaxHealth = this.calculateMaxHealth(this.currentShipType);
+                const healthToRestore = Math.max(0, shipMaxHealth - this.playerHealth);
+                const cost = Math.ceil(healthToRestore) * 2;
+                
+                repairShipInfo.innerHTML = `Ship: ${this.playerHealth.toFixed(0)} / ${shipMaxHealth} HP`;
+                if (healthToRestore <= 0) {
+                    repairShipBtn.textContent = 'Ship at Full Health';
+                    repairShipBtn.disabled = true;
+                } else {
+                    repairShipBtn.textContent = `Repair Ship - ${cost} M`;
+                    repairShipBtn.disabled = this.money < cost;
+                }
+            }
+
+            const repairBaseBtn = document.getElementById('repairBaseBtn');
+            const repairBaseInfo = document.getElementById('repairBaseInfo');
+            if (repairBaseBtn && repairBaseInfo) {
+                const baseHealthToRestore = this.base.maxHealth - this.base.health;
+                const cost = Math.ceil(baseHealthToRestore) * 2;
+
+                repairBaseInfo.innerHTML = `Base: ${this.base.health.toFixed(0)} / ${this.base.maxHealth} HP`;
+                if (baseHealthToRestore <= 0) {
+                    repairBaseBtn.textContent = 'Base at Full Health';
+                    repairBaseBtn.disabled = true;
+                } else {
+                    repairBaseBtn.textContent = `Repair Base - ${cost} M`;
+                    repairBaseBtn.disabled = this.money < cost;
+                }
+            }
+        }
     }
 
 
     handleShopAction(actionType, type = null) {
         this.playSound('menuClick');
-        let purchased = false, equipped = false, upgraded = false;
+        let purchased = false, equipped = false, upgraded = false, repaired = false;
 
         switch (actionType) {
             case 'buyShip':
@@ -859,6 +905,11 @@ export class Game {
                     this.experience -= configToBuy.cost;
                     this.ownedShips.push(type);
                     this.shipUpgrades[type] = { damage: 0, fireRate: 0, health: 0, speed: 0 };
+                    
+                    // NEW: Set new ship to full health
+                    const newShipMaxHealth = this.calculateMaxHealth(type);
+                    this.shipHealths[type] = newShipMaxHealth;
+                    
                     this.currentShipType = type;
                     purchased = true;
                     equipped = true;
@@ -870,6 +921,10 @@ export class Game {
                     this.currentShipType = type;
                     equipped = true;
                     this.playSound('menuConfirm');
+                    
+                    // NEW: Load the health of the equipped ship
+                    this.updateShipStats(); // Update stats first
+                    this.playerHealth = this.shipHealths[this.currentShipType];
                 }
                 break;
             case 'upgradeShip':
@@ -885,13 +940,46 @@ export class Game {
                         this.money -= cost;
                         currentUpgrades[upgradeType]++;
                         upgraded = true;
+                        // If upgrading health, add the bonus health to current and max health
+                        if (upgradeType === 'health') {
+                            const bonus = upgradeInfo.bonuses[currentLevel];
+                            const newMaxHealth = this.calculateMaxHealth(this.currentShipType);
+                            this.playerHealth += bonus;
+                            this.shipHealths[this.currentShipType] = this.playerHealth;
+                        }
+                        this.playSound('menuConfirm');
+                    }
+                }
+                break;
+            case 'repairShip':
+                const shipMaxHealth = this.calculateMaxHealth(this.currentShipType);
+                const shipHealthToRestore = shipMaxHealth - this.playerHealth;
+                if (shipHealthToRestore > 0) {
+                    const cost = Math.ceil(shipHealthToRestore) * 2;
+                    if (this.money >= cost) {
+                        this.money -= cost;
+                        this.playerHealth = shipMaxHealth;
+                        this.shipHealths[this.currentShipType] = this.playerHealth;
+                        repaired = true;
+                        this.playSound('menuConfirm');
+                    }
+                }
+                break;
+            case 'repairBase':
+                const baseHealthToRestore = this.base.maxHealth - this.base.health;
+                if (baseHealthToRestore > 0) {
+                    const cost = Math.ceil(baseHealthToRestore) * 2;
+                    if (this.money >= cost) {
+                        this.money -= cost;
+                        this.base.health = this.base.maxHealth;
+                        repaired = true;
                         this.playSound('menuConfirm');
                     }
                 }
                 break;
         }
 
-        if (purchased || equipped || upgraded) {
+        if (purchased || equipped || upgraded || repaired) {
             this.updateShipStats();
             this.renderShopMenus();
             this.updateShopPreview(this.currentShipType);
@@ -908,10 +996,10 @@ export class Game {
         if (this.victoryScreenDiv) this.victoryScreenDiv.style.display = 'none';
         if (this.loadingTextDiv) this.loadingTextDiv.style.display = 'none';
         if (this.difficultySelectionDiv) this.difficultySelectionDiv.style.display = 'none';
-        if (this.startGameBtn) this.startGameBtn.style.display = 'block'; // Show by default, hide later if needed
+        if (this.startGameBtn) this.startGameBtn.style.display = 'block';
         if (this.levelMapScreenDiv) this.levelMapScreenDiv.style.display = 'none';
         if (this.achievementsMenuDiv) this.achievementsMenuDiv.style.display = 'none';
-        if (this.pauseMenuDiv) this.pauseMenuDiv.style.display = 'none'; // Hide pause menu
+        if (this.pauseMenuDiv) this.pauseMenuDiv.style.display = 'none';
 
         this.currentState = menuState;
         this.selectedMenuButtonIndex = 0;
@@ -954,7 +1042,6 @@ export class Game {
                 if (this.gameOverBaseHealthSpan) this.gameOverBaseHealthSpan.textContent = this.base.health;
                 this.currentMenuButtons = [this.gameOverBackToMainBtn].filter(Boolean);
                 this.playSound('gameOverSound');
-                // Track losses
                 let losses = parseInt(localStorage.getItem('spaceInvadersLosses') || '0', 10);
                 losses++;
                 localStorage.setItem('spaceInvadersLosses', losses);
@@ -997,16 +1084,12 @@ export class Game {
     }
     
     update(deltaTime) {
-        if (this.currentState === GAME_STATES.SHOP) return;
-        if (this.currentState === GAME_STATES.PAUSED) return; // Fully pause game logic
+        if (this.currentState === GAME_STATES.SHOP || this.currentState === GAME_STATES.PAUSED) return;
 
-        // Check for achievements
         const unlockedAchievements = this.achievementManager.checkAll();
         if (unlockedAchievements.length > 0) {
-            unlockedAchievements.forEach(ach => {
-                this.displayAchievementNotification(ach);
-            });
-            this.saveGame(); // Save progress when an achievement is unlocked
+            unlockedAchievements.forEach(ach => this.displayAchievementNotification(ach));
+            this.saveGame();
         }
 
         for (const abilityName in this.shipAbilityCooldowns) {
@@ -1048,14 +1131,10 @@ export class Game {
             const enemy = this.enemies[i];
             const enemyActions = enemy.update(deltaTime, this.canvas, this.player, this.projectiles, this);
             
-            if (enemyActions.newProjectiles.length > 0) {
-                this.enemyProjectiles.push(...enemyActions.newProjectiles);
-            }
+            if (enemyActions.newProjectiles.length > 0) this.enemyProjectiles.push(...enemyActions.newProjectiles);
             if (enemyActions.newEnemies.length > 0) {
                 enemyActions.newEnemies.forEach(newEnemy => {
-                    if (this.enemies.length < this.maxEnemiesOnScreen) {
-                        this.enemies.push(newEnemy);
-                    }
+                    if (this.enemies.length < this.maxEnemiesOnScreen) this.enemies.push(newEnemy);
                 });
             }
 
@@ -1083,7 +1162,7 @@ export class Game {
                     enemy.health -= projectile.damage;
                     if (enemy.health <= 0) {
                         enemy.active = false;
-                        this.enemiesDefeated++; // Achievement tracking
+                        this.enemiesDefeated++;
                         const difficulty = this.difficultySettings[this.currentDifficulty];
                         this.score += Math.round(10 * difficulty.scoreRate);
                         this.money += Math.round(5 * difficulty.moneyRate);
@@ -1124,6 +1203,7 @@ export class Game {
             }
             if (this.player && !this.playerInvincible && checkCollision(this.player, this.boss)) {
                 this.playerHealth -= this.boss.damage;
+                this.shipHealths[this.currentShipType] = this.playerHealth; // Sync health
                 this.playerInvincible = true;
                 this.invincibilityTimer = this.invincibilityDuration;
                 if (this.playerHealth <= 0) {
@@ -1155,11 +1235,10 @@ export class Game {
                 const projectile = this.enemyProjectiles[i];
                 if (!projectile.active) continue;
                 if (checkCollision(this.player, projectile)) {
-                    if (projectile.isChargeBeam && projectile.chargePhase !== 'firing') {
-                        continue; 
-                    }
+                    if (projectile.isChargeBeam && projectile.chargePhase !== 'firing') continue; 
                     projectile.active = false;
                     this.playerHealth -= projectile.damage;
+                    this.shipHealths[this.currentShipType] = this.playerHealth; // Sync health
                     this.playerInvincible = true;
                     this.invincibilityTimer = this.invincibilityDuration;
                     if (this.playerHealth <= 0) {
@@ -1175,6 +1254,7 @@ export class Game {
                 if (!enemy.active) continue;
                 if (checkCollision(this.player, enemy)) {
                     this.playerHealth -= 20;
+                    this.shipHealths[this.currentShipType] = this.playerHealth; // Sync health
                     enemy.active = false;
                     this.playerInvincible = true;
                     this.invincibilityTimer = this.invincibilityDuration;
@@ -1198,7 +1278,7 @@ export class Game {
                         this.holdingBombPowerUp = true;
                         this.bombPlacement.x = this.player.x + this.player.width / 2;
                         this.bombPlacement.y = this.player.y + this.player.height / 2;
-                        this.displayPowerUpNotification(powerUp.type, 0); // Show bomb notification
+                        this.displayPowerUpNotification(powerUp.type, 0);
                         this.playSound('powerUpSound');
                     } else if (powerUp.type !== 'bomb') {
                         powerUp.active = false;
@@ -1218,7 +1298,6 @@ export class Game {
         if (this.currentState === GAME_STATES.SHOP) return;
 
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        
         this.drawStaticBackground();
 
         if (this.currentState === GAME_STATES.PLAYING || this.currentState === GAME_STATES.BOSS_FIGHT || this.currentState === GAME_STATES.PAUSED) {
@@ -1269,7 +1348,7 @@ export class Game {
         this.ctx.fillStyle = '#FFFFFF';
         this.ctx.font = '14px "Press Start 2P", monospace';
         this.ctx.textAlign = 'center';
-        this.ctx.fillText(`BASE: ${this.base.health}`, this.canvas.width / 2, healthBarY - 10);
+        this.ctx.fillText(`BASE: ${this.base.health.toFixed(0)}`, this.canvas.width / 2, healthBarY - 10);
     }
 
     drawPlayingScreen() {
@@ -1336,7 +1415,7 @@ export class Game {
 
 
         this.ctx.textAlign = 'right';
-        this.ctx.fillText(`HEALTH: ${this.playerHealth}`, this.canvas.width - 10, 30);
+        this.ctx.fillText(`HEALTH: ${this.playerHealth.toFixed(0)}`, this.canvas.width - 10, 30);
 
         if (this.isBossPhase && this.boss && this.boss.active) {
             this.ctx.fillStyle = '#FFD700';
@@ -1358,7 +1437,6 @@ export class Game {
         }
     }
 
-    // FIX 3: This now only draws the dark overlay. The HTML menu handles the text and buttons.
     drawPauseScreen() {
         this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
@@ -1366,19 +1444,14 @@ export class Game {
     
     activateCurrentShipAbility() {
         const currentShipAbility = this.currentShipStats.ability;
-        if (!currentShipAbility || currentShipAbility.name === 'None') {
-            return;
-        }
+        if (!currentShipAbility || currentShipAbility.name === 'None') return;
     
         const abilityName = currentShipAbility.name;
         const cooldown = currentShipAbility.cooldown;
     
-        if (this.shipAbilityCooldowns[abilityName] && this.shipAbilityCooldowns[abilityName] > 0) {
-            return;
-        }
+        if (this.shipAbilityCooldowns[abilityName] && this.shipAbilityCooldowns[abilityName] > 0) return;
     
         this.playSound('abilitySound');
-    
         this.shipAbilityCooldowns[abilityName] = cooldown;
     
         switch (abilityName) {
@@ -1400,9 +1473,7 @@ export class Game {
             case 'EMP Blast':
                 const empDuration = 2;
                 this.enemies.forEach(enemy => {
-                    if (!enemy.isBoss) {
-                        enemy.isStunned = true;
-                    }
+                    if (!enemy.isBoss) enemy.isStunned = true;
                 });
                 this.activeShipAbilities[abilityName] = { timer: empDuration };
                 break;
@@ -1417,7 +1488,8 @@ export class Game {
                 break;
     
             case 'Shield Recharge':
-                this.base.health = Math.min(this.base.health + 30, this.base.maxHealth);
+                this.playerHealth = Math.min(this.playerHealth + 30, this.currentShipStats.health);
+                this.shipHealths[this.currentShipType] = this.playerHealth; // Sync health state
                 break;
     
             case 'Time Warp':
@@ -1466,12 +1538,8 @@ export class Game {
     
             case 'EMP Blast':
                 if (this.activeShipAbilities[abilityName]) {
-                    this.enemies.forEach(enemy => {
-                        enemy.isStunned = false;
-                    });
-                    if (this.boss && this.boss.active) {
-                        this.boss.isStunned = false;
-                    }
+                    this.enemies.forEach(enemy => enemy.isStunned = false);
+                    if (this.boss && this.boss.active) this.boss.isStunned = false;
                     delete this.activeShipAbilities[abilityName];
                 }
                 break;
@@ -1534,7 +1602,7 @@ export class Game {
                 const currentTime = performance.now() / 1000;
                 if (currentTime - this.lastShotTime >= this.currentShipStats.fireRate) {
                     this.player.fire();
-                    this.projectilesFired += this.currentShipStats.numProjectiles; // Achievement tracking
+                    this.projectilesFired += this.currentShipStats.numProjectiles;
                     this.playSound('shotSound');
                     this.lastShotTime = currentTime;
                     this.canFireOnKeyPress = false;
@@ -1542,19 +1610,11 @@ export class Game {
             }
         }
 
-        // FIX 3: Pause is now handled by a toggle function.
         if (e.key === 'Escape' || e.key === 'p') {
             if (this.currentState === GAME_STATES.PLAYING || this.currentState === GAME_STATES.BOSS_FIGHT || this.currentState === GAME_STATES.PAUSED) {
                 this.togglePause();
             }
         }
-        
-        // FIX 3: Removed 'M' key functionality to leave the level. This is now handled by the pause menu button.
-        // if (e.key === 'm' || e.key === 'M') {
-        //     if (this.currentState !== GAME_STATES.MAIN_MENU && this.currentState !== GAME_STATES.LOADING) {
-        //          this.returnToMainMenu();
-        //     }
-        // }
     }
 
     handleKeyUp(e) {
@@ -1587,21 +1647,19 @@ export class Game {
         }
     }
 
-    // FIX 3: New function to handle pausing and the pause menu UI.
     togglePause() {
         if (this.currentState === GAME_STATES.PLAYING || this.currentState === GAME_STATES.BOSS_FIGHT) {
             const previousState = this.currentState;
             this.showMenu(GAME_STATES.PAUSED);
-            this.currentState.previous = previousState; // Remember what state we were in
+            this.currentState.previous = previousState;
             if (this.bgMusic && this.soundEnabled) this.bgMusic.pause();
         } else if (this.currentState === GAME_STATES.PAUSED) {
-            this.showMenu(this.currentState.previous || GAME_STATES.PLAYING); // Return to previous state
+            this.showMenu(this.currentState.previous || GAME_STATES.PLAYING);
             if (this.bgMusic && this.soundEnabled) this.bgMusic.play().catch(e => console.error(e));
         }
     }
 
     returnToMainMenu(forceReset = false) {
-        // FIX 2: Save game progress when returning to the main menu from a level.
         if (this.currentState === GAME_STATES.PLAYING || this.currentState === GAME_STATES.BOSS_FIGHT || this.currentState === GAME_STATES.PAUSED) {
             this.saveGame();
         }
@@ -1632,9 +1690,9 @@ export class Game {
             };
             this.completedLevels = [];
             this.achievementManager.reset();
+            this.shipHealths = {}; // Reset ship healths
         }
         
-        this.playerHealth = 100;
         this.projectiles = [];
         this.enemyProjectiles = [];
         this.powerUps = [];
@@ -1654,6 +1712,10 @@ export class Game {
         this.shipAbilityCooldowns = {};
         this.activeShipAbilities = {};
         this.updateShipStats();
+        this.playerHealth = this.currentShipStats.health; // Set to max after reset
+        if(this.shipHealths[this.currentShipType] === undefined) {
+             this.shipHealths[this.currentShipType] = this.playerHealth;
+        }
         this.currentLevel = 1;
 
         if (this.bgMusic) {
@@ -1690,7 +1752,8 @@ export class Game {
         this.enemies = [];
         this.explosions = [];
         this.activePowerUpEffects = {};
-        this.playerHealth = this.currentShipStats.health;
+        
+        // Player health is NOT reset here anymore to make it persistent.
 
         this.isBossPhase = false;
         this.boss = null;
@@ -1716,7 +1779,8 @@ export class Game {
 
     initializePlayer() {
         this.player = new Player(this);
-        this.playerHealth = this.currentShipStats.health;
+        this.updateShipStats();
+        this.playerHealth = this.shipHealths[this.currentShipType] || this.currentShipStats.health;
         this.player.speed = this.currentShipStats.speed;
     }
 
@@ -1816,11 +1880,6 @@ export class Game {
         this.powerUps.push(new PowerUp(enemy.x, enemy.y, 40, 40, type, spriteName));
     }
     
-    /**
-     * Applies the game logic for a power-up and triggers the visual notification.
-     * @param {string} type - The type of the power-up (e.g., 'shield', 'fireRate').
-     * @param {number} duration - The duration of the power-up effect in seconds.
-     */
     applyPowerUpEffect(type, duration) {
         const effect = { timer: duration, duration: duration }; 
         let value = null;
@@ -1845,6 +1904,7 @@ export class Game {
             case 'heal':
                 value = 25 + this.currentLevel * 2;
                 this.playerHealth = Math.min(this.playerHealth + value, this.currentShipStats.health);
+                this.shipHealths[this.currentShipType] = this.playerHealth; // Sync health
                 break;
             case 'bomb':
                 break;
@@ -1889,12 +1949,6 @@ export class Game {
         }
     }
 
-    /**
-     * Creates and manages a power-up notification element in the DOM.
-     * @param {string} type - The type of power-up.
-     * @param {number} duration - The duration for timed power-ups.
-     * @param {number|null} value - The value for instant power-ups (e.g., money amount).
-     */
     displayPowerUpNotification(type, duration, value = null) {
         if (!this.powerUpIndicatorsDiv) return;
 
@@ -1913,7 +1967,7 @@ export class Game {
         const isInstant = !duration || ['money', 'heal', 'bomb'].includes(type);
         if (isInstant) {
             notification.classList.add('instant');
-            duration = 3; // Instant notifications display for 3 seconds.
+            duration = 3;
         }
 
         const sprite = this.assetLoader.getAsset(`${type}PowerUpSprite`);
@@ -1943,12 +1997,10 @@ export class Game {
 
         this.powerUpIndicatorsDiv.appendChild(notification);
 
-        // Use requestAnimationFrame to ensure the element is in the DOM before adding the 'show' class for the transition.
         requestAnimationFrame(() => {
             notification.classList.add('show');
         });
 
-        // If it's a timed power-up, set up an interval to update the UI.
         if (!isInstant) {
             const timerElement = notification.querySelector('.powerup-timer');
             const progressBarElement = notification.querySelector('.powerup-progress-bar');
@@ -1963,30 +2015,27 @@ export class Game {
                     if (progressBarElement) progressBarElement.style.width = `${(remainingTime / duration) * 100}%`;
                 }
             }, 100);
-            // Store the interval ID on the element so we can clear it upon removal.
             notification.dataset.intervalId = intervalId;
         }
 
-        // Set a timeout to hide and then remove the notification from the DOM.
         setTimeout(() => {
             notification.classList.remove('show');
             notification.classList.add('hide');
             
-            // Remove the element completely after the 'hide' animation finishes.
             setTimeout(() => {
                 const intervalId = notification.dataset.intervalId;
                 if (intervalId) {
                     clearInterval(parseInt(intervalId));
                 }
                 notification.remove();
-            }, 400); // This duration must match the transition time in style.css
+            }, 400);
         }, duration * 1000);
     }
 
     toggleSound() {
         this.soundEnabled = !this.soundEnabled;
         if (this.toggleSoundBtn) this.toggleSoundBtn.textContent = `TOGGLE SOUND (${this.soundEnabled ? 'ON' : 'OFF'})`;
-        this.setVolume(this.gameVolume); // This will update all sounds based on the new enabled state
+        this.setVolume(this.gameVolume);
         this.saveGame();
     }
 
@@ -1994,24 +2043,14 @@ export class Game {
         this.gameVolume = volume;
         const effectiveVolume = this.soundEnabled ? this.gameVolume : 0;
 
-        if (this.bgMusic) {
-            this.bgMusic.volume = effectiveVolume;
-        }
-
+        if (this.bgMusic) this.bgMusic.volume = effectiveVolume;
         for (const soundName in this.sounds) {
-            if (this.sounds[soundName]) {
-                this.sounds[soundName].volume = effectiveVolume;
-            }
+            if (this.sounds[soundName]) this.sounds[soundName].volume = effectiveVolume;
         }
-
         for (const soundName in this.soundPools) {
-            this.soundPools[soundName].audios.forEach(audio => {
-                audio.volume = effectiveVolume;
-            });
+            this.soundPools[soundName].audios.forEach(audio => audio.volume = effectiveVolume);
         }
-        if (!fromLoad) {
-            this.saveGame();
-        }
+        if (!fromLoad) this.saveGame();
     }
 
     populateLevelMap() {
@@ -2022,7 +2061,6 @@ export class Game {
         if (selectedLevelIndex >= this.levels.length) selectedLevelIndex = this.levels.length - 1;
         if (selectedLevelIndex < 1) selectedLevelIndex = 1;
 
-        // Create two row containers
         const row1 = document.createElement('div');
         const row2 = document.createElement('div');
         row1.style.display = 'flex';
@@ -2033,7 +2071,6 @@ export class Game {
         row2.style.justifyContent = 'center';
         row2.style.gap = '15px';
 
-        // Collect all valid levels
         const validLevels = [];
         for (let i = 1; i < this.levels.length; i++) {
             const levelConfig = this.levels[i];
@@ -2041,7 +2078,6 @@ export class Game {
             validLevels.push(i);
         }
 
-        // Distribute levels across two rows (right to left in each row)
         validLevels.forEach((levelIndex, arrayIndex) => {
             const button = document.createElement('button');
             button.classList.add('level-button', 'menu-button');
@@ -2051,17 +2087,13 @@ export class Game {
             const isCompleted = this.completedLevels.includes(levelIndex);
             const isLocked = levelIndex > maxAvailableLevel;
 
-            if (isCompleted) {
-                button.classList.add('completed');
-            }
+            if (isCompleted) button.classList.add('completed');
             if (isLocked) {
                 button.disabled = true;
                 button.textContent += ' (Locked)';
             } else {
                 button.addEventListener('click', () => this.handleLevelSelection(levelIndex));
-                if (levelIndex === selectedLevelIndex) {
-                    button.classList.add('selected');
-                }
+                if (levelIndex === selectedLevelIndex) button.classList.add('selected');
             }
 
             button.addEventListener('mouseenter', () => this.displayLevelPlot(levelIndex));
@@ -2069,7 +2101,6 @@ export class Game {
             button.addEventListener('mouseleave', () => this.displayLevelPlot(selectedLevelIndex));
             button.addEventListener('blur', () => this.displayLevelPlot(selectedLevelIndex));
 
-            // Add to appropriate row (first half to row1, second half to row2)
             if (arrayIndex < Math.ceil(validLevels.length / 2)) {
                 row1.appendChild(button);
             } else {
@@ -2077,7 +2108,6 @@ export class Game {
             }
         });
 
-        // Add rows to container
         this.levelButtonsContainer.appendChild(row1);
         this.levelButtonsContainer.appendChild(row2);
         
@@ -2271,10 +2301,6 @@ export class Game {
         }));
     }
 
-    /**
-     * Creates and displays an achievement notification.
-     * @param {Achievement} achievement - The achievement that was just unlocked.
-     */
     displayAchievementNotification(achievement) {
         if (!this.achievementIndicatorsDiv) return;
 
@@ -2304,13 +2330,13 @@ export class Game {
             notification.classList.add('show');
         });
 
-        const displayDuration = 5000; // 5 seconds
+        const displayDuration = 5000;
 
         setTimeout(() => {
             notification.classList.remove('show');
             setTimeout(() => {
                 notification.remove();
-            }, 500); // Match CSS transition
+            }, 500);
         }, displayDuration);
     }
 
@@ -2319,7 +2345,6 @@ export class Game {
         this.achievementsListDiv.innerHTML = '';
         const achievements = this.achievementManager.achievements;
         const unlocked = this.achievementManager.unlockedIds;
-        // Filter achievements
         let filtered = achievements;
         if (this.achievementFilter === 'unlocked') filtered = achievements.filter(ach => unlocked.has(ach.id));
         if (this.achievementFilter === 'locked') filtered = achievements.filter(ach => !unlocked.has(ach.id));
@@ -2332,7 +2357,6 @@ export class Game {
             div.className = entryClass;
             const iconAsset = this.assetLoader.getAsset(ach.icon);
             const iconUrl = iconAsset ? iconAsset.src : '';
-            // Progress bar logic
             let progressHtml = '';
             if (ach.progressFn) {
                 const { current, max } = ach.progressFn(this);
@@ -2354,7 +2378,6 @@ export class Game {
                 </div>
             `;
             this.achievementsListDiv.appendChild(div);
-            // Animated effect for newly unlocked
             if (unlocked.has(ach.id) && ach.justUnlocked) {
                 div.classList.add('just-unlocked');
                 setTimeout(() => div.classList.remove('just-unlocked'), 2000);
@@ -2382,15 +2405,14 @@ export class Game {
 
     renderPlayerStats() {
         if (!this.playerStatsDiv) return;
-        // Calculate stats
         const shots = this.projectilesFired;
         const ships = this.ownedShips.length;
         const money = this.money;
         const exp = this.experience;
         const levelsCompleted = this.completedLevels.length;
         const enemiesKilled = this.enemiesDefeated;
-        const bossesKilled = this.completedLevels.length; // Each completed level = 1 boss killed
-        const wins = this.completedLevels.length > 0 ? 1 : 0; // 1 win if at least one victory
+        const bossesKilled = this.completedLevels.length;
+        const wins = this.completedLevels.length > 0 ? 1 : 0;
         const losses = parseInt(localStorage.getItem('spaceInvadersLosses') || '0', 10);
 
         this.playerStatsDiv.innerHTML = `
@@ -2419,7 +2441,7 @@ export class Game {
     setDifficulty(difficulty) {
         this.currentDifficulty = difficulty;
         this.updateDifficultyLabel();
-        this.saveGame(); // Save difficulty setting immediately
+        this.saveGame();
     }
 
     updateDifficultyLabel() {

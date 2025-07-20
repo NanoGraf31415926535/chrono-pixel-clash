@@ -10,7 +10,6 @@
     <div id="gameContainer">
         <canvas id="gameCanvas" width="640" height="480"></canvas>
 
-        <!-- FEATURE: Added container for power-up indicators -->
         <div id="powerUpIndicators"></div>
         <div id="achievementIndicators"></div>
 
@@ -33,7 +32,6 @@
             <h2>OPTIONS</h2>
             <div id="difficultyOptions" style="margin-bottom: 15px;">
                 <label for="difficultySelect">DIFFICULTY:</label>
-                <!-- FIX 4: The dropdown is now the primary way to select difficulty -->
                 <select id="difficultySelect" class="menu-button">
                     <option value="easy">Easy</option>
                     <option value="normal">Normal</option>
@@ -88,6 +86,25 @@
                 </div>
                 <button id="closeUpgradeBtn" class="shop-close-button">Close</button>
             </div>
+
+            <!-- NEW: Repair Menu -->
+            <div id="repairMenu" class="shop-sub-menu" style="display: none;">
+                <h2>REPAIR BAY</h2>
+                <p>Money: <span id="currentMoneyDisplayRepair">0</span></p>
+                <p>Repairs cost 2 Money per 1 HP.</p>
+                <div id="repairColumn" class="shop-column">
+                    <div class="repair-item">
+                        <p id="repairShipInfo">Ship: 100 / 100 HP</p>
+                        <button id="repairShipBtn" class="menu-button repair-button">Repair Ship</button>
+                    </div>
+                    <div class="repair-item">
+                        <p id="repairBaseInfo">Base: 100 / 100 HP</p>
+                        <button id="repairBaseBtn" class="menu-button repair-button">Repair Base</button>
+                    </div>
+                </div>
+                <button id="closeRepairBtn" class="shop-close-button">Close</button>
+            </div>
+
         </div>
 
 
@@ -119,7 +136,6 @@
             <button id="victoryBackToMainBtn" class="menu-button">BACK TO MAIN MENU</button>
         </div>
 
-        <!-- FIX 3: Added a proper HTML pause menu -->
         <div id="pauseMenu" class="game-ui" style="display: none;">
             <h2>PAUSED</h2>
             <button id="resumeGameBtn" class="pixel-shooter-btn">Resume</button>

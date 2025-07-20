@@ -36,6 +36,15 @@ export class Shop {
                 width: 128, 
                 height: 128, 
                 spriteName: 'starmap_table' 
+            },
+            // NEW: Repair Bay Station
+            {
+                name: 'Repair Bay',
+                x: this.canvas.width * 0.5 - 64,
+                y: this.canvas.height * 0.35 - 64,
+                width: 128,
+                height: 128,
+                spriteName: 'repair_bay_console'
             }
         ];
 
@@ -56,7 +65,7 @@ export class Shop {
 
         const playerMinX = 0;
         const playerMaxX = this.canvas.width - this.player.width;
-        const playerMinY = this.canvas.height * 0.2;
+        const playerMinY = this.canvas.height * 0.1;
         const playerMaxY = this.canvas.height - this.player.height;
 
         this.player.x = Math.max(playerMinX, Math.min(this.player.x, playerMaxX));
@@ -88,6 +97,8 @@ export class Shop {
                  buttons = document.querySelectorAll(`#shipyardMenu .ship-button:not(:disabled)`);
             } else if (this.currentMenu === 'upgrades') {
                  buttons = document.querySelectorAll(`#upgradeMenu .upgrade-button:not(:disabled)`);
+            } else if (this.currentMenu === 'repair') {
+                 buttons = document.querySelectorAll(`#repairMenu .repair-button:not(:disabled)`);
             }
             if (buttons && buttons[this.selectedButtonIndex]) {
                 buttons[this.selectedButtonIndex].click();
@@ -102,6 +113,9 @@ export class Shop {
                 this.currentMenu = 'upgrades';
                 this.game.renderShopMenus();
                 this.game.updateShopPreview(this.game.currentShipType);
+            } else if (this.activeStation.name === 'Repair Bay') {
+                this.currentMenu = 'repair';
+                this.game.renderShopMenus();
             } else if (this.activeStation.name === 'Missions') {
                 this.game.showMenu('LEVEL_MAP');
             }
@@ -123,6 +137,8 @@ export class Shop {
             buttons = Array.from(document.querySelectorAll(`${menuId} .ship-button:not(:disabled)`));
         } else if (this.currentMenu === 'upgrades') {
             buttons = Array.from(document.querySelectorAll(`${menuId} .upgrade-button:not(:disabled)`));
+        } else if (this.currentMenu === 'repair') {
+            buttons = Array.from(document.querySelectorAll(`${menuId} .repair-button:not(:disabled)`));
         }
         
         if (!buttons || buttons.length === 0) return;
@@ -133,11 +149,13 @@ export class Shop {
             this.selectedButtonIndex = (this.selectedButtonIndex + 1) % buttons.length;
         }
         
-        document.querySelectorAll(`${menuId} .menu-button`).forEach(btn => btn.classList.remove('selected'));
+        document.querySelectorAll(`.menu-button`).forEach(btn => btn.classList.remove('selected'));
         const selectedButton = buttons[this.selectedButtonIndex];
         if (selectedButton) {
             selectedButton.classList.add('selected');
-            selectedButton.dispatchEvent(new MouseEvent('mouseenter'));
+            if (this.currentMenu === 'shipyard') {
+                selectedButton.dispatchEvent(new MouseEvent('mouseenter'));
+            }
         }
     }
 
@@ -173,18 +191,27 @@ export class Shop {
         const interactionPrompt = document.getElementById('interactionPrompt');
         const shipyardMenu = document.getElementById('shipyardMenu');
         const upgradeMenu = document.getElementById('upgradeMenu');
+        const repairMenu = document.getElementById('repairMenu');
 
         if (this.currentMenu === 'shipyard') {
             if(shipyardMenu) shipyardMenu.style.display = 'grid';
             if(upgradeMenu) upgradeMenu.style.display = 'none';
+            if(repairMenu) repairMenu.style.display = 'none';
             if(interactionPrompt) interactionPrompt.style.display = 'none';
         } else if (this.currentMenu === 'upgrades') {
             if(shipyardMenu) shipyardMenu.style.display = 'none';
             if(upgradeMenu) upgradeMenu.style.display = 'block';
+            if(repairMenu) repairMenu.style.display = 'none';
+            if(interactionPrompt) interactionPrompt.style.display = 'none';
+        } else if (this.currentMenu === 'repair') {
+            if(shipyardMenu) shipyardMenu.style.display = 'none';
+            if(upgradeMenu) upgradeMenu.style.display = 'none';
+            if(repairMenu) repairMenu.style.display = 'block';
             if(interactionPrompt) interactionPrompt.style.display = 'none';
         } else {
             if(shipyardMenu) shipyardMenu.style.display = 'none';
             if(upgradeMenu) upgradeMenu.style.display = 'none';
+            if(repairMenu) repairMenu.style.display = 'none';
             if (this.activeStation) {
                 if(interactionPrompt) {
                     interactionPrompt.style.display = 'block';

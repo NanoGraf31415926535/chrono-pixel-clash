@@ -678,6 +678,30 @@ canvas {
     text-shadow: 1px 1px #000;
 }
 
+/* NEW: Styles for Repair Menu */
+#repairMenu {
+    display: block;
+    text-align: center;
+}
+
+.repair-item {
+    background: rgba(0,0,0,0.2);
+    border: 1px solid var(--shop-bg-medium);
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+.repair-item p {
+    font-size: 1.1em;
+    color: var(--retro-text-color);
+    margin-bottom: 10px;
+}
+
+.repair-button {
+    width: 100%;
+}
+
+
 .menu-button {
     background-color: transparent;
     color: var(--image-menu-text-color);
@@ -929,7 +953,6 @@ canvas {
     margin-bottom: 32px;
 }
 
-/* FIX 3: Added styles for the new pause menu */
 #pauseMenu {
     display: flex;
     flex-direction: column;
