@@ -24,9 +24,64 @@
             <button id="startGameBtn" class="pixel-shooter-btn">Start Game</button>
             <button id="continueGameBtn" class="pixel-shooter-btn" style="display:none;">Continue Game</button>
             <button id="achievementsBtn" class="pixel-shooter-btn">Achievements</button>
+            <!-- New Profile Button -->
+            <button id="profileBtn" class="pixel-shooter-btn">Pilot Profile</button>
             <button id="optionsBtn" class="pixel-shooter-btn">Options</button>
             <button id="creditsBtn" class="pixel-shooter-btn">Credits</button>
         </div>
+
+        <!-- New Profile Menu -->
+        <div id="profileMenu" class="game-ui" style="display: none;">
+            <h2>PILOT PROFILE</h2>
+            <div class="profile-layout">
+                <div class="profile-left">
+                    <div id="profilePictureContainer">
+                        <img id="profilePicture" src="https://placehold.co/150x150/110022/00ffff?text=Pilot" alt="Profile Picture">
+                    </div>
+                    <div class="profile-pic-controls">
+                        <button id="prevAvatarBtn" class="avatar-btn">&lt;</button>
+                        <span id="avatarName">Default Pilot</span>
+                        <button id="nextAvatarBtn" class="avatar-btn">&gt;</button>
+                    </div>
+                    <div class="nickname-container">
+                        <label for="nicknameInput">Nickname:</label>
+                        <input type="text" id="nicknameInput" maxlength="12">
+                        <button id="saveNicknameBtn">Save</button>
+                    </div>
+                </div>
+                <div class="profile-right">
+                    <h3>Career Statistics</h3>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <span class="stat-label">Best Score</span>
+                            <span id="profileBestScore" class="stat-value">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Enemies Defeated</span>
+                            <span id="profileEnemiesDefeated" class="stat-value">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Bosses Defeated</span>
+                            <span id="profileBossesDefeated" class="stat-value">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Total Money Earned</span>
+                            <span id="profileTotalMoney" class="stat-value">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Total EXP Gained</span>
+                            <span id="profileTotalExp" class="stat-value">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Shots Fired</span>
+                            <span id="profileShotsFired" class="stat-value">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button id="backToMainFromProfileBtn" class="menu-button">BACK TO MAIN MENU</button>
+        </div>
+
 
         <div id="optionsMenu" class="game-ui" style="display: none;">
             <h2>OPTIONS</h2>

@@ -40,8 +40,6 @@ export class Game {
         this.canFireOnKeyPress = true;
 
         this.enemies = [];
-        this.enemiesDefeated = 0; // Achievement tracking
-        this.projectilesFired = 0; // Achievement tracking
         this.lastEnemySpawnTime = 0;
         this.enemySpawnRate = 1.5;
         this.currentEnemySpeedMultiplier = 1;
@@ -54,6 +52,7 @@ export class Game {
             'monster1', 'monster2', 'monster3', 'monster4', 'monster5', 'monster6', 'monster7'
         ];
 
+        // --- Player Stats & Profile Data ---
         this.score = 0;
         this.money = 0;
         this.experience = 0;
@@ -61,6 +60,27 @@ export class Game {
         this.playerInvincible = false;
         this.invincibilityDuration = 1.5;
         this.invincibilityTimer = 0;
+
+        // Persistent Profile Stats
+        this.playerNickname = 'Pilot';
+        this.bestScore = 0;
+        this.totalEnemiesDefeated = 0;
+        this.totalBossesDefeated = 0;
+        this.totalMoneyEarned = 0;
+        this.totalExpGained = 0;
+        this.totalProjectilesFired = 0;
+        this.currentAvatarIndex = 0;
+        this.avatars = [
+            { name: 'Default Pilot', url: 'https://placehold.co/150x150/110022/00ffff?text=Pilot' },
+            { name: 'Viper', url: 'https://placehold.co/150x150/110022/39FF14?text=Viper' },
+            { name: 'Nova', url: 'https://placehold.co/150x150/110022/ff00ff?text=Nova' },
+            { name: 'Rogue', url: 'https://placehold.co/150x150/110022/ff3333?text=Rogue' }
+        ];
+
+        // In-game session stats (reset each run)
+        this.enemiesDefeated = 0;
+        this.projectilesFired = 0; 
+
 
         this.base = {
             x: 0, y: 0, width: 0, visualWidth: 0, height: 0,
@@ -214,6 +234,7 @@ export class Game {
         this.continueGameBtn = document.getElementById('continueGameBtn');
         this.optionsBtn = document.getElementById('optionsBtn');
         this.creditsBtn = document.getElementById('creditsBtn');
+        this.profileBtn = document.getElementById('profileBtn'); // Profile button
         
         this.optionsMenuDiv = document.getElementById('optionsMenu');
         this.difficultySelect = document.getElementById('difficultySelect');
@@ -221,6 +242,17 @@ export class Game {
         this.volumeSlider = document.getElementById('volumeSlider');
         this.toggleFullscreenBtn = document.getElementById('toggleFullscreenBtn');
         this.backToMainBtn = document.getElementById('backToMainBtn');
+
+        // Profile Menu Elements
+        this.profileMenuDiv = document.getElementById('profileMenu');
+        this.backToMainFromProfileBtn = document.getElementById('backToMainFromProfileBtn');
+        this.nicknameInput = document.getElementById('nicknameInput');
+        this.saveNicknameBtn = document.getElementById('saveNicknameBtn');
+        this.profilePicture = document.getElementById('profilePicture');
+        this.prevAvatarBtn = document.getElementById('prevAvatarBtn');
+        this.nextAvatarBtn = document.getElementById('nextAvatarBtn');
+        this.avatarNameSpan = document.getElementById('avatarName');
+
 
         this.pauseMenuDiv = document.getElementById('pauseMenu');
         this.resumeGameBtn = document.getElementById('resumeGameBtn');
@@ -405,6 +437,7 @@ export class Game {
         
         if (this.optionsBtn) this.optionsBtn.addEventListener('click', () => this.showMenu(GAME_STATES.OPTIONS));
         if (this.creditsBtn) this.creditsBtn.addEventListener('click', () => this.showMenu(GAME_STATES.CREDITS));
+        if (this.profileBtn) this.profileBtn.addEventListener('click', () => this.showMenu(GAME_STATES.PROFILE));
         
         if (this.difficultySelect) this.difficultySelect.addEventListener('change', (e) => this.setDifficulty(e.target.value));
 
@@ -413,6 +446,7 @@ export class Game {
         if (this.toggleFullscreenBtn) this.toggleFullscreenBtn.addEventListener('click', () => this.toggleFullScreen());
         if (this.backToMainBtn) this.backToMainBtn.addEventListener('click', () => this.returnToMainMenu());
         if (this.backToMainFromCreditsBtn) this.backToMainFromCreditsBtn.addEventListener('click', () => this.returnToMainMenu());
+        if (this.backToMainFromProfileBtn) this.backToMainFromProfileBtn.addEventListener('click', () => this.returnToMainMenu());
         
         if (this.resumeGameBtn) this.resumeGameBtn.addEventListener('click', () => this.togglePause());
         if (this.pauseToMainBtn) this.pauseToMainBtn.addEventListener('click', () => this.returnToMainMenu());
@@ -420,6 +454,16 @@ export class Game {
         if (this.closeShipyardBtn) this.closeShipyardBtn.addEventListener('click', () => this.shop.closeMenu());
         if (this.closeUpgradeBtn) this.closeUpgradeBtn.addEventListener('click', () => this.shop.closeMenu());
         if (this.closeRepairBtn) this.closeRepairBtn.addEventListener('click', () => this.shop.closeMenu()); // NEW
+
+        // Profile screen listeners
+        if (this.saveNicknameBtn) this.saveNicknameBtn.addEventListener('click', () => {
+            this.playerNickname = this.nicknameInput.value;
+            this.saveGame();
+            this.playSound('menuConfirm');
+        });
+        if (this.prevAvatarBtn) this.prevAvatarBtn.addEventListener('click', () => this.changeAvatar(-1));
+        if (this.nextAvatarBtn) this.nextAvatarBtn.addEventListener('click', () => this.changeAvatar(1));
+
 
         // NEW: Event listeners for repair buttons
         const repairShipBtn = document.getElementById('repairShipBtn');
@@ -530,8 +574,8 @@ export class Game {
             
             if (this.toggleSoundBtn) this.toggleSoundBtn.textContent = `TOGGLE SOUND (${this.soundEnabled ? 'ON' : 'OFF'})`;
             if (this.volumeSlider) this.volumeSlider.value = this.gameVolume * 100;
+            this.loadGame(); // Load game data first
             this.showMenu(GAME_STATES.MAIN_MENU);
-            this.loadGame();
             this.updateMainMenuButtons();
             this.gameLoop(0);
         };
@@ -592,6 +636,7 @@ export class Game {
 
     saveGame() {
         const gameState = {
+            // Game progress
             score: this.score,
             money: this.money,
             experience: this.experience,
@@ -601,11 +646,23 @@ export class Game {
             currentShipType: this.currentShipType,
             ownedShips: this.ownedShips,
             shipUpgrades: this.shipUpgrades,
-            shipHealths: this.shipHealths, // SAVE individual ship health
+            shipHealths: this.shipHealths,
+            unlockedAchievementIds: Array.from(this.achievementManager.unlockedIds),
+            
+            // Settings
             soundEnabled: this.soundEnabled,
             gameVolume: this.gameVolume,
             currentDifficulty: this.currentDifficulty,
-            unlockedAchievementIds: Array.from(this.achievementManager.unlockedIds)
+
+            // Profile Data
+            playerNickname: this.playerNickname,
+            bestScore: this.bestScore,
+            totalEnemiesDefeated: this.totalEnemiesDefeated,
+            totalBossesDefeated: this.totalBossesDefeated,
+            totalMoneyEarned: this.totalMoneyEarned,
+            totalExpGained: this.totalExpGained,
+            totalProjectilesFired: this.totalProjectilesFired,
+            currentAvatarIndex: this.currentAvatarIndex
         };
         try {
             localStorage.setItem('spaceInvadersGameState', JSON.stringify(gameState));
@@ -621,19 +678,37 @@ export class Game {
             const savedState = localStorage.getItem('spaceInvadersGameState');
             if (savedState) {
                 const gameState = JSON.parse(savedState);
+                
+                // Load Game Progress
                 this.score = gameState.score || 0;
                 this.money = gameState.money || 0;
                 this.experience = gameState.experience || 0;
                 this.base.health = gameState.baseHealth || this.base.maxHealth;
                 this.currentLevel = gameState.currentLevel || 1;
                 this.completedLevels = gameState.completedLevels || [];
-                this.currentDifficulty = gameState.currentDifficulty || 'normal';
-                this.soundEnabled = gameState.soundEnabled !== undefined ? gameState.soundEnabled : true;
-                this.gameVolume = gameState.gameVolume !== undefined ? gameState.gameVolume : 0.5;
                 this.currentShipType = gameState.currentShipType || 'ship1';
                 this.ownedShips = gameState.ownedShips || ['ship1'];
                 this.shipUpgrades = gameState.shipUpgrades || { 'ship1': { damage: 0, fireRate: 0, health: 0, speed: 0 } };
-                this.shipHealths = gameState.shipHealths || {}; // LOAD individual ship health
+                this.shipHealths = gameState.shipHealths || {};
+                if (gameState.unlockedAchievementIds) {
+                    this.achievementManager.loadUnlocked(new Set(gameState.unlockedAchievementIds));
+                }
+                
+                // Load Settings
+                this.currentDifficulty = gameState.currentDifficulty || 'normal';
+                this.soundEnabled = gameState.soundEnabled !== undefined ? gameState.soundEnabled : true;
+                this.gameVolume = gameState.gameVolume !== undefined ? gameState.gameVolume : 0.5;
+
+                // Load Profile Data
+                this.playerNickname = gameState.playerNickname || 'Pilot';
+                this.bestScore = gameState.bestScore || 0;
+                this.totalEnemiesDefeated = gameState.totalEnemiesDefeated || 0;
+                this.totalBossesDefeated = gameState.totalBossesDefeated || 0;
+                this.totalMoneyEarned = gameState.totalMoneyEarned || 0;
+                this.totalExpGained = gameState.totalExpGained || 0;
+                this.totalProjectilesFired = gameState.totalProjectilesFired || 0;
+                this.currentAvatarIndex = gameState.currentAvatarIndex || 0;
+
 
                 // Ensure all owned ships have a health value.
                 this.ownedShips.forEach(shipId => {
@@ -642,12 +717,7 @@ export class Game {
                     }
                 });
                 
-                if (gameState.unlockedAchievementIds) {
-                    this.achievementManager.loadUnlocked(new Set(gameState.unlockedAchievementIds));
-                }
-
                 this.updateShipStats();
-                // Set player health from the loaded persistent data
                 this.playerHealth = this.shipHealths[this.currentShipType] || this.currentShipStats.health;
 
                 this.updateDifficultyLabel();
@@ -938,6 +1008,7 @@ export class Game {
                     const cost = upgradeInfo.costs[currentLevel];
                     if (this.money >= cost) {
                         this.money -= cost;
+                        this.totalMoneyEarned -= cost; // Subtract from total as it's an expense
                         currentUpgrades[upgradeType]++;
                         upgraded = true;
                         // If upgrading health, add the bonus health to current and max health
@@ -958,6 +1029,7 @@ export class Game {
                     const cost = Math.ceil(shipHealthToRestore) * 2;
                     if (this.money >= cost) {
                         this.money -= cost;
+                        this.totalMoneyEarned -= cost;
                         this.playerHealth = shipMaxHealth;
                         this.shipHealths[this.currentShipType] = this.playerHealth;
                         repaired = true;
@@ -971,6 +1043,7 @@ export class Game {
                     const cost = Math.ceil(baseHealthToRestore) * 2;
                     if (this.money >= cost) {
                         this.money -= cost;
+                        this.totalMoneyEarned -= cost;
                         this.base.health = this.base.maxHealth;
                         repaired = true;
                         this.playSound('menuConfirm');
@@ -1000,6 +1073,7 @@ export class Game {
         if (this.levelMapScreenDiv) this.levelMapScreenDiv.style.display = 'none';
         if (this.achievementsMenuDiv) this.achievementsMenuDiv.style.display = 'none';
         if (this.pauseMenuDiv) this.pauseMenuDiv.style.display = 'none';
+        if (this.profileMenuDiv) this.profileMenuDiv.style.display = 'none';
 
         this.currentState = menuState;
         this.selectedMenuButtonIndex = 0;
@@ -1010,7 +1084,7 @@ export class Game {
                 this.updateMainMenuButtons();
                 this.currentMenuButtons = [
                     this.startGameBtn,
-                    this.continueGameBtn, this.achievementsBtn, this.optionsBtn, this.creditsBtn
+                    this.continueGameBtn, this.achievementsBtn, this.profileBtn, this.optionsBtn, this.creditsBtn
                 ].filter(btn => btn && btn.style.display !== 'none');
                 break;
             case GAME_STATES.OPTIONS:
@@ -1042,6 +1116,8 @@ export class Game {
                 if (this.gameOverBaseHealthSpan) this.gameOverBaseHealthSpan.textContent = this.base.health;
                 this.currentMenuButtons = [this.gameOverBackToMainBtn].filter(Boolean);
                 this.playSound('gameOverSound');
+                if (this.score > this.bestScore) { this.bestScore = this.score; }
+                this.saveGame();
                 let losses = parseInt(localStorage.getItem('spaceInvadersLosses') || '0', 10);
                 losses++;
                 localStorage.setItem('spaceInvadersLosses', losses);
@@ -1051,6 +1127,8 @@ export class Game {
                 if (this.victoryScoreSpan) this.victoryScoreSpan.textContent = this.score;
                 this.currentMenuButtons = [this.victoryBackToMainBtn].filter(Boolean);
                 this.playSound('victorySound');
+                if (this.score > this.bestScore) { this.bestScore = this.score; }
+                this.saveGame();
                 break;
             case GAME_STATES.LOADING:
                 if (this.loadingTextDiv) this.loadingTextDiv.style.display = 'block';
@@ -1060,6 +1138,11 @@ export class Game {
                 if (this.achievementsMenuDiv) this.achievementsMenuDiv.style.display = 'block';
                 this.switchAchievementsStats('achievements');
                 this.currentMenuButtons = [this.backToMainFromAchievementsBtn].filter(Boolean);
+                break;
+            case GAME_STATES.PROFILE:
+                if (this.profileMenuDiv) this.profileMenuDiv.style.display = 'block';
+                this.renderProfileMenu();
+                this.currentMenuButtons = [this.backToMainFromProfileBtn];
                 break;
             case GAME_STATES.PAUSED:
                 if (this.pauseMenuDiv) this.pauseMenuDiv.style.display = 'block';
@@ -1150,7 +1233,6 @@ export class Game {
                     this.base.health = 0;
                     this.showMenu(GAME_STATES.GAME_OVER);
                     if (this.bgMusic && this.soundEnabled) this.bgMusic.pause();
-                    this.saveGame();
                     return;
                 }
             }
@@ -1163,10 +1245,15 @@ export class Game {
                     if (enemy.health <= 0) {
                         enemy.active = false;
                         this.enemiesDefeated++;
+                        this.totalEnemiesDefeated++;
                         const difficulty = this.difficultySettings[this.currentDifficulty];
+                        const moneyGained = Math.round(5 * difficulty.moneyRate);
+                        const expGained = Math.round(10 * difficulty.expRate);
                         this.score += Math.round(10 * difficulty.scoreRate);
-                        this.money += Math.round(5 * difficulty.moneyRate);
-                        this.experience += Math.round(10 * difficulty.expRate);
+                        this.money += moneyGained;
+                        this.totalMoneyEarned += moneyGained;
+                        this.experience += expGained;
+                        this.totalExpGained += expGained;
                         if (Math.random() < 0.3) this.spawnPowerUp(enemy);
                         this.explosions.push(new Explosion(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, this.assetLoader.getAsset('explosionSprite')));
                         this.playSound('explosionSound');
@@ -1209,7 +1296,6 @@ export class Game {
                 if (this.playerHealth <= 0) {
                     this.showMenu(GAME_STATES.GAME_OVER);
                     if (this.bgMusic && this.soundEnabled) this.bgMusic.pause();
-                    this.saveGame();
                     return;
                 }
             }
@@ -1217,7 +1303,6 @@ export class Game {
                 this.base.health = 0;
                 this.showMenu(GAME_STATES.GAME_OVER);
                 if (this.bgMusic && this.soundEnabled) this.bgMusic.pause();
-                this.saveGame();
                 return;
             }
         }
@@ -1244,7 +1329,6 @@ export class Game {
                     if (this.playerHealth <= 0) {
                         this.showMenu(GAME_STATES.GAME_OVER);
                         if (this.bgMusic && this.soundEnabled) this.bgMusic.pause();
-                        this.saveGame();
                         return;
                     }
                 }
@@ -1261,7 +1345,6 @@ export class Game {
                     if (this.playerHealth <= 0) {
                         this.showMenu(GAME_STATES.GAME_OVER);
                         if (this.bgMusic && this.soundEnabled) this.bgMusic.pause();
-                        this.saveGame();
                         return;
                     }
                 }
@@ -1603,6 +1686,7 @@ export class Game {
                 if (currentTime - this.lastShotTime >= this.currentShipStats.fireRate) {
                     this.player.fire();
                     this.projectilesFired += this.currentShipStats.numProjectiles;
+                    this.totalProjectilesFired += this.currentShipStats.numProjectiles;
                     this.playSound('shotSound');
                     this.lastShotTime = currentTime;
                     this.canFireOnKeyPress = false;
@@ -1754,6 +1838,8 @@ export class Game {
         this.activePowerUpEffects = {};
         
         // Player health is NOT reset here anymore to make it persistent.
+        this.enemiesDefeated = 0;
+        this.projectilesFired = 0;
 
         this.isBossPhase = false;
         this.boss = null;
@@ -1816,6 +1902,7 @@ export class Game {
     bossDefeated() {
         this.isBossPhase = false;
         this.boss = null;
+        this.totalBossesDefeated++;
 
         if (!this.completedLevels.includes(this.currentLevel)) {
             this.completedLevels.push(this.currentLevel);
@@ -1900,6 +1987,7 @@ export class Game {
             case 'money':
                 value = 50 + this.currentLevel * 10;
                 this.money += value;
+                this.totalMoneyEarned += value;
                 break;
             case 'heal':
                 value = 25 + this.currentLevel * 2;
@@ -2194,6 +2282,7 @@ export class Game {
             if (distance <= bombRadius) {
                 enemy.active = false;
                 this.enemiesDefeated++;
+                this.totalEnemiesDefeated++;
                 const difficulty = this.difficultySettings[this.currentDifficulty];
                 this.score += Math.round(10 * difficulty.scoreRate);
                 this.money += Math.round(5 * difficulty.moneyRate);
@@ -2215,18 +2304,57 @@ export class Game {
         this.holdingBombPowerUp = false;
     }
 
+    // --- PROFILE METHODS ---
+    renderProfileMenu() {
+        if (!this.profileMenuDiv) return;
+
+        // Populate the fields
+        document.getElementById('profileBestScore').textContent = this.bestScore;
+        document.getElementById('profileEnemiesDefeated').textContent = this.totalEnemiesDefeated;
+        document.getElementById('profileBossesDefeated').textContent = this.totalBossesDefeated;
+        document.getElementById('profileTotalMoney').textContent = this.totalMoneyEarned;
+        document.getElementById('profileTotalExp').textContent = this.totalExpGained;
+        document.getElementById('profileShotsFired').textContent = this.totalProjectilesFired;
+        
+        if (this.nicknameInput) this.nicknameInput.value = this.playerNickname;
+        
+        this.updateAvatarDisplay();
+    }
+
+    changeAvatar(direction) {
+        this.currentAvatarIndex += direction;
+        if (this.currentAvatarIndex < 0) {
+            this.currentAvatarIndex = this.avatars.length - 1;
+        } else if (this.currentAvatarIndex >= this.avatars.length) {
+            this.currentAvatarIndex = 0;
+        }
+        this.updateAvatarDisplay();
+        this.saveGame();
+        this.playSound('menuHover');
+    }
+
+    updateAvatarDisplay() {
+        if (this.profilePicture && this.avatarNameSpan) {
+            const avatar = this.avatars[this.currentAvatarIndex];
+            this.profilePicture.src = avatar.url;
+            this.profilePicture.alt = avatar.name;
+            this.avatarNameSpan.textContent = avatar.name;
+        }
+    }
+
+
     // --- ACHIEVEMENT METHODS ---
 
     initializeAchievements() {
         this.achievementManager.addAchievement(new Achievement({
             id: 'first_kill', name: 'First Contact', description: 'Defeat your first enemy.', icon: 'ach_first_kill',
-            conditionFn: (game) => game.enemiesDefeated >= 1,
-            progressFn: (game) => ({ current: game.enemiesDefeated, max: 1 })
+            conditionFn: (game) => game.totalEnemiesDefeated >= 1,
+            progressFn: (game) => ({ current: game.totalEnemiesDefeated, max: 1 })
         }));
         this.achievementManager.addAchievement(new Achievement({
             id: 'destroyer_100', name: 'Destroyer', description: 'Defeat 100 enemies.', icon: 'ach_destroyer', rare: true,
-            conditionFn: (game) => game.enemiesDefeated >= 100,
-            progressFn: (game) => ({ current: game.enemiesDefeated, max: 100 })
+            conditionFn: (game) => game.totalEnemiesDefeated >= 100,
+            progressFn: (game) => ({ current: game.totalEnemiesDefeated, max: 100 })
         }));
         this.achievementManager.addAchievement(new Achievement({
             id: 'moneybags_1k', name: 'Moneybags', description: 'Accumulate 1000 credits in one run.', icon: 'ach_money',
@@ -2245,13 +2373,13 @@ export class Game {
         }));
         this.achievementManager.addAchievement(new Achievement({
             id: 'boss_slayer_1', name: 'Boss Slayer', description: 'Defeat the first boss.', icon: 'ach_boss_slayer', rare: true,
-            conditionFn: (game) => game.completedLevels.includes(1) && game.boss === null,
-            progressFn: (game) => ({ current: game.completedLevels.includes(1) ? 1 : 0, max: 1 })
+            conditionFn: (game) => game.totalBossesDefeated >= 1,
+            progressFn: (game) => ({ current: game.totalBossesDefeated, max: 1 })
         }));
         this.achievementManager.addAchievement(new Achievement({
             id: 'trigger_happy_500', name: 'Trigger Happy', description: 'Fire 500 projectiles.', icon: 'ach_trigger_happy',
-            conditionFn: (game) => game.projectilesFired >= 500,
-            progressFn: (game) => ({ current: game.projectilesFired, max: 500 })
+            conditionFn: (game) => game.totalProjectilesFired >= 500,
+            progressFn: (game) => ({ current: game.totalProjectilesFired, max: 500 })
         }));
         this.achievementManager.addAchievement(new Achievement({
             id: 'power_up_3', name: 'Power Overwhelming', description: 'Have 3 power-ups active at once.', icon: 'ach_power_up', rare: true,
@@ -2296,8 +2424,8 @@ export class Game {
         }));
         this.achievementManager.addAchievement(new Achievement({
             id: 'destroyer', name: 'Ultimate Destroyer', description: 'Defeat 1000 enemies.', icon: 'ach_destroyer', rare: true,
-            conditionFn: (game) => game.enemiesDefeated >= 1000,
-            progressFn: (game) => ({ current: game.enemiesDefeated, max: 1000 })
+            conditionFn: (game) => game.totalEnemiesDefeated >= 1000,
+            progressFn: (game) => ({ current: game.totalEnemiesDefeated, max: 1000 })
         }));
     }
 
@@ -2405,13 +2533,13 @@ export class Game {
 
     renderPlayerStats() {
         if (!this.playerStatsDiv) return;
-        const shots = this.projectilesFired;
+        const shots = this.totalProjectilesFired;
         const ships = this.ownedShips.length;
-        const money = this.money;
-        const exp = this.experience;
+        const money = this.totalMoneyEarned;
+        const exp = this.totalExpGained;
         const levelsCompleted = this.completedLevels.length;
-        const enemiesKilled = this.enemiesDefeated;
-        const bossesKilled = this.completedLevels.length;
+        const enemiesKilled = this.totalEnemiesDefeated;
+        const bossesKilled = this.totalBossesDefeated;
         const wins = this.completedLevels.length > 0 ? 1 : 0;
         const losses = parseInt(localStorage.getItem('spaceInvadersLosses') || '0', 10);
 
@@ -2419,8 +2547,8 @@ export class Game {
             <div class="player-stats-list">
                 <div class="player-stat-row"><span class="stat-label">Shots Fired:</span><span class="stat-value">${shots}</span></div>
                 <div class="player-stat-row"><span class="stat-label">Ships Owned:</span><span class="stat-value">${ships}</span></div>
-                <div class="player-stat-row"><span class="stat-label">Money:</span><span class="stat-value">${money}</span></div>
-                <div class="player-stat-row"><span class="stat-label">Experience:</span><span class="stat-value">${exp}</span></div>
+                <div class="player-stat-row"><span class="stat-label">Total Money:</span><span class="stat-value">${money}</span></div>
+                <div class="player-stat-row"><span class="stat-label">Total Experience:</span><span class="stat-value">${exp}</span></div>
                 <div class="player-stat-row"><span class="stat-label">Levels Completed:</span><span class="stat-value">${levelsCompleted}</span></div>
                 <div class="player-stat-row"><span class="stat-label">Enemies Killed:</span><span class="stat-value">${enemiesKilled}</span></div>
                 <div class="player-stat-row"><span class="stat-label">Bosses Killed:</span><span class="stat-value">${bossesKilled}</span></div>
