@@ -69,7 +69,9 @@ export class Game {
         this.totalMoneyEarned = 0;
         this.totalExpGained = 0;
         this.totalProjectilesFired = 0;
+        this.totalProjectilesHit = 0; // New stat for accuracy
         this.currentAvatarIndex = 0;
+        this.customAvatar = null; // To store custom uploaded avatar
         this.avatars = [
             { name: 'Default Pilot', url: 'https://placehold.co/150x150/110022/00ffff?text=Pilot' },
             { name: 'Viper', url: 'https://placehold.co/150x150/110022/39FF14?text=Viper' },
@@ -252,6 +254,8 @@ export class Game {
         this.prevAvatarBtn = document.getElementById('prevAvatarBtn');
         this.nextAvatarBtn = document.getElementById('nextAvatarBtn');
         this.avatarNameSpan = document.getElementById('avatarName');
+        this.customAvatarInput = document.getElementById('customAvatarInput');
+        this.uploadAvatarBtn = document.getElementById('uploadAvatarBtn');
 
 
         this.pauseMenuDiv = document.getElementById('pauseMenu');
@@ -463,6 +467,24 @@ export class Game {
         });
         if (this.prevAvatarBtn) this.prevAvatarBtn.addEventListener('click', () => this.changeAvatar(-1));
         if (this.nextAvatarBtn) this.nextAvatarBtn.addEventListener('click', () => this.changeAvatar(1));
+        if (this.uploadAvatarBtn) this.uploadAvatarBtn.addEventListener('click', () => this.customAvatarInput.click());
+        if (this.customAvatarInput) this.customAvatarInput.addEventListener('change', (e) => this.handleAvatarUpload(e));
+
+        // Profile tabs
+        document.querySelectorAll('.profile-tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tab = btn.dataset.tab;
+                document.querySelectorAll('.profile-tab-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                document.querySelectorAll('.profile-tab-content').forEach(content => {
+                    content.style.display = 'none';
+                    content.classList.remove('active');
+                });
+                const activeContent = document.getElementById(`profile-${tab}-content`);
+                activeContent.style.display = 'block';
+                activeContent.classList.add('active');
+            });
+        });
 
 
         // NEW: Event listeners for repair buttons
@@ -662,7 +684,9 @@ export class Game {
             totalMoneyEarned: this.totalMoneyEarned,
             totalExpGained: this.totalExpGained,
             totalProjectilesFired: this.totalProjectilesFired,
-            currentAvatarIndex: this.currentAvatarIndex
+            totalProjectilesHit: this.totalProjectilesHit,
+            currentAvatarIndex: this.currentAvatarIndex,
+            customAvatar: this.customAvatar
         };
         try {
             localStorage.setItem('spaceInvadersGameState', JSON.stringify(gameState));
@@ -707,7 +731,22 @@ export class Game {
                 this.totalMoneyEarned = gameState.totalMoneyEarned || 0;
                 this.totalExpGained = gameState.totalExpGained || 0;
                 this.totalProjectilesFired = gameState.totalProjectilesFired || 0;
+                this.totalProjectilesHit = gameState.totalProjectilesHit || 0;
                 this.currentAvatarIndex = gameState.currentAvatarIndex || 0;
+                this.customAvatar = gameState.customAvatar || null;
+
+                // If a custom avatar exists, add it to the avatars list
+                if (this.customAvatar) {
+                    const customAvatarEntry = { name: 'Custom', url: this.customAvatar };
+                    // Avoid adding duplicates
+                    if (!this.avatars.find(avatar => avatar.name === 'Custom')) {
+                        this.avatars.push(customAvatarEntry);
+                    } else {
+                        // Update existing custom avatar url
+                        const existing = this.avatars.find(avatar => avatar.name === 'Custom');
+                        existing.url = this.customAvatar;
+                    }
+                }
 
 
                 // Ensure all owned ships have a health value.
@@ -1008,7 +1047,7 @@ export class Game {
                     const cost = upgradeInfo.costs[currentLevel];
                     if (this.money >= cost) {
                         this.money -= cost;
-                        this.totalMoneyEarned -= cost; // Subtract from total as it's an expense
+                        // totalMoneyEarned is a lifetime stat, so we no longer subtract from it.
                         currentUpgrades[upgradeType]++;
                         upgraded = true;
                         // If upgrading health, add the bonus health to current and max health
@@ -1029,7 +1068,6 @@ export class Game {
                     const cost = Math.ceil(shipHealthToRestore) * 2;
                     if (this.money >= cost) {
                         this.money -= cost;
-                        this.totalMoneyEarned -= cost;
                         this.playerHealth = shipMaxHealth;
                         this.shipHealths[this.currentShipType] = this.playerHealth;
                         repaired = true;
@@ -1043,7 +1081,6 @@ export class Game {
                     const cost = Math.ceil(baseHealthToRestore) * 2;
                     if (this.money >= cost) {
                         this.money -= cost;
-                        this.totalMoneyEarned -= cost;
                         this.base.health = this.base.maxHealth;
                         repaired = true;
                         this.playSound('menuConfirm');
@@ -1246,6 +1283,7 @@ export class Game {
                         enemy.active = false;
                         this.enemiesDefeated++;
                         this.totalEnemiesDefeated++;
+                        this.totalProjectilesHit++; // Increment hit counter
                         const difficulty = this.difficultySettings[this.currentDifficulty];
                         const moneyGained = Math.round(5 * difficulty.moneyRate);
                         const expGained = Math.round(10 * difficulty.expRate);
@@ -1277,6 +1315,7 @@ export class Game {
                 if (!projectile.active) continue;
                 if (checkCollision(projectile, this.boss)) {
                     projectile.active = false;
+                    this.totalProjectilesHit++; // Increment hit counter for boss hits
                     this.boss.health -= projectile.damage;
                     this.explosions.push(new Explosion(projectile.x, projectile.y, this.assetLoader.getAsset('explosionSprite')));
                     this.playSound('explosionSound');
@@ -1437,6 +1476,18 @@ export class Game {
     drawPlayingScreen() {
         if (this.player) {
             this.player.draw(this.ctx, this.assetLoader, this.playerInvincible, this.invincibilityTimer);
+            // Draw player nickname under the ship
+            this.ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            this.ctx.font = '12px "Press Start 2P", monospace';
+            this.ctx.textAlign = 'center';
+            this.ctx.shadowColor = 'black';
+            this.ctx.shadowBlur = 4;
+            this.ctx.fillText(
+                this.playerNickname,
+                this.player.x + this.player.width / 2,
+                this.player.y + this.player.height + 18
+            );
+            this.ctx.shadowBlur = 0;
         }
         this.projectiles.forEach(p => p.draw(this.ctx));
         this.enemyProjectiles.forEach(p => p.draw(this.ctx));
@@ -2308,17 +2359,71 @@ export class Game {
     renderProfileMenu() {
         if (!this.profileMenuDiv) return;
 
-        // Populate the fields
+        // --- Populate Stats Tab ---
+        const ranks = ['Rookie', 'Cadet', 'Officer', 'Ace', 'Veteran', 'Legend'];
+        const rankIndex = Math.min(ranks.length - 1, Math.floor(this.totalExpGained / 2000));
+        document.getElementById('profilePilotRank').textContent = ranks[rankIndex];
+        
         document.getElementById('profileBestScore').textContent = this.bestScore;
         document.getElementById('profileEnemiesDefeated').textContent = this.totalEnemiesDefeated;
         document.getElementById('profileBossesDefeated').textContent = this.totalBossesDefeated;
         document.getElementById('profileTotalMoney').textContent = this.totalMoneyEarned;
         document.getElementById('profileTotalExp').textContent = this.totalExpGained;
         document.getElementById('profileShotsFired').textContent = this.totalProjectilesFired;
+        document.getElementById('profileLevelsCompleted').textContent = this.completedLevels.length;
+
+        const accuracy = this.totalProjectilesFired > 0 ? ((this.totalProjectilesHit / this.totalProjectilesFired) * 100).toFixed(1) : '0.0';
+        document.getElementById('profileAccuracy').textContent = `${accuracy}%`;
         
         if (this.nicknameInput) this.nicknameInput.value = this.playerNickname;
         
+        // --- Populate Hangar Tab ---
+        const shipsContainer = document.getElementById('ownedShipsContainer');
+        shipsContainer.innerHTML = ''; // Clear previous entries
+        this.ownedShips.forEach(shipId => {
+            const shipConfig = this.shipConfigs[shipId];
+            if (shipConfig) {
+                const shipElement = document.createElement('div');
+                shipElement.className = 'ship-hangar-item';
+
+                const shipImage = document.createElement('img');
+                const shipSprite = this.assetLoader.getAsset(shipConfig.spriteName);
+                shipImage.src = shipSprite ? shipSprite.src : '';
+                shipImage.alt = shipId;
+
+                const shipName = document.createElement('span');
+                shipName.textContent = shipId.replace('ship', 'Ship ');
+
+                shipElement.appendChild(shipImage);
+                shipElement.appendChild(shipName);
+                shipsContainer.appendChild(shipElement);
+            }
+        });
+
         this.updateAvatarDisplay();
+    }
+
+    handleAvatarUpload(event) {
+        const file = event.target.files[0];
+        if (file && file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                this.customAvatar = e.target.result;
+                const customAvatarEntry = { name: 'Custom', url: this.customAvatar };
+                
+                const existingIndex = this.avatars.findIndex(avatar => avatar.name === 'Custom');
+                if (existingIndex !== -1) {
+                    this.avatars[existingIndex] = customAvatarEntry;
+                } else {
+                    this.avatars.push(customAvatarEntry);
+                }
+                
+                this.currentAvatarIndex = this.avatars.length - 1;
+                this.updateAvatarDisplay();
+                this.saveGame();
+            };
+            reader.readAsDataURL(file);
+        }
     }
 
     changeAvatar(direction) {

@@ -1474,6 +1474,8 @@ canvas {
 
 .profile-right {
     flex: 2;
+    display: flex;
+    flex-direction: column;
 }
 
 #profilePictureContainer {
@@ -1491,7 +1493,13 @@ canvas {
 #profilePicture {
     width: 100%;
     height: 100%;
+    object-fit: cover;
     image-rendering: pixelated;
+}
+
+#uploadAvatarBtn {
+    width: 100%;
+    margin-bottom: 10px;
 }
 
 .profile-pic-controls {
@@ -1566,7 +1574,7 @@ canvas {
 }
 
 .profile-right h3 {
-    color: var(--retro-neon-gold);
+    color: var(--shop-accent-gold);
     text-align: center;
     margin-bottom: 20px;
     font-size: 1.2em;
@@ -1575,7 +1583,7 @@ canvas {
 
 .stats-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: 15px;
 }
 
@@ -1602,4 +1610,69 @@ canvas {
 
 #backToMainFromProfileBtn {
     margin-top: 20px;
+}
+
+/* Profile Tabs */
+.profile-tabs {
+    display: flex;
+    margin-bottom: 15px;
+    border-bottom: 2px solid var(--retro-neon-blue);
+}
+
+.profile-tab-btn {
+    flex: 1;
+    background: none;
+    border: none;
+    color: var(--retro-neon-blue);
+    padding: 10px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 1em;
+    cursor: pointer;
+    text-transform: uppercase;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.profile-tab-btn.active, .profile-tab-btn:hover {
+    color: var(--retro-neon-green);
+    border-bottom-color: var(--retro-neon-green);
+    text-shadow: 0 0 5px var(--retro-neon-green);
+}
+
+.profile-tab-content {
+    display: none;
+}
+
+.profile-tab-content.active {
+    display: block;
+}
+
+/* Ship Hangar */
+.ships-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 15px;
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+.ship-hangar-item {
+    background: rgba(0,0,0,0.5);
+    border: 2px solid var(--shop-accent-gold);
+    padding: 10px;
+    text-align: center;
+}
+
+.ship-hangar-item img {
+    width: 100%;
+    max-width: 80px;
+    height: auto;
+    image-rendering: pixelated;
+    margin-bottom: 5px;
+}
+
+.ship-hangar-item span {
+    font-size: 0.8em;
+    color: var(--shop-accent-gold);
 }
