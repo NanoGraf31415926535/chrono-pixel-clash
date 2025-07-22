@@ -52,6 +52,8 @@ export class Game {
             'monster1', 'monster2', 'monster3', 'monster4', 'monster5', 'monster6', 'monster7'
         ];
 
+        this.inLevel = false;
+
         // --- Player Stats & Profile Data ---
         this.score = 0;
         this.money = 0;
@@ -637,6 +639,7 @@ export class Game {
         this.initializePlayer();
         this.isBossPhase = false; 
         this.boss = null;
+        this.inLevel = true;
         if (this.currentLevel === 1 && !localStorage.getItem('tutorialCompleted')) {
             this.showTutorial();
         } else {
@@ -649,14 +652,28 @@ export class Game {
 
     continueGame() {
         if (this.loadGame()) {
-            this.showMenu(GAME_STATES.LEVEL_MAP);
+            if (this.inLevel) {
+                 this.restoreGameState();
+            } else {
+                this.showMenu(GAME_STATES.LEVEL_MAP);
+            }
         } else {
             console.log("No saved game found to continue.");
+            // Fallback to starting a new game if continue fails
             this.showMenu(GAME_STATES.LEVEL_MAP);
         }
     }
 
     saveGame() {
+        // Don't save over a completed game state with a main menu state
+        if (this.currentState === GAME_STATES.MAIN_MENU && localStorage.getItem('spaceInvadersGameState')) {
+            const savedData = JSON.parse(localStorage.getItem('spaceInvadersGameState'));
+            if (savedData.inLevel) {
+                console.log("Skipping save from main menu to preserve in-progress game.");
+                return;
+            }
+        }
+
         const gameState = {
             // Game progress
             score: this.score,
@@ -670,6 +687,9 @@ export class Game {
             shipUpgrades: this.shipUpgrades,
             shipHealths: this.shipHealths,
             unlockedAchievementIds: Array.from(this.achievementManager.unlockedIds),
+            
+            // In-progress level data
+            inLevel: this.inLevel && this.currentState !== GAME_STATES.SHOP,
             
             // Settings
             soundEnabled: this.soundEnabled,
@@ -688,6 +708,11 @@ export class Game {
             currentAvatarIndex: this.currentAvatarIndex,
             customAvatar: this.customAvatar
         };
+
+        if (gameState.inLevel) {
+            gameState.activeGameData = this.captureGameState();
+        }
+
         try {
             localStorage.setItem('spaceInvadersGameState', JSON.stringify(gameState));
             console.log("Game saved!");
@@ -717,6 +742,9 @@ export class Game {
                 if (gameState.unlockedAchievementIds) {
                     this.achievementManager.loadUnlocked(new Set(gameState.unlockedAchievementIds));
                 }
+                
+                // Load in-progress status
+                this.inLevel = gameState.inLevel || false;
                 
                 // Load Settings
                 this.currentDifficulty = gameState.currentDifficulty || 'normal';
@@ -780,7 +808,13 @@ export class Game {
     }
 
     updateMainMenuButtons() {
-        const savedGameExists = localStorage.getItem('spaceInvadersGameState') !== null;
+        const savedState = localStorage.getItem('spaceInvadersGameState');
+        let savedGameExists = false;
+        if (savedState) {
+            const gameState = JSON.parse(savedState);
+            savedGameExists = gameState.inLevel || gameState.completedLevels.length > 0 || gameState.experience > 0;
+        }
+
         if (this.continueGameBtn) {
             this.continueGameBtn.style.display = savedGameExists ? 'block' : 'none';
         }
@@ -1358,6 +1392,22 @@ export class Game {
             for (let i = this.enemyProjectiles.length - 1; i >= 0; i--) {
                 const projectile = this.enemyProjectiles[i];
                 if (!projectile.active) continue;
+
+                if (projectile.isLightning) {
+                    if (this.checkLightningCollision(this.player, projectile)) {
+                        this.playerHealth -= projectile.damage;
+                        this.shipHealths[this.currentShipType] = this.playerHealth;
+                        this.playerInvincible = true;
+                        this.invincibilityTimer = this.invincibilityDuration;
+                        if (this.playerHealth <= 0) {
+                            this.showMenu(GAME_STATES.GAME_OVER);
+                            if (this.bgMusic && this.soundEnabled) this.bgMusic.pause();
+                            return;
+                        }
+                    }
+                    continue;
+                }
+
                 if (checkCollision(this.player, projectile)) {
                     if (projectile.isChargeBeam && projectile.chargePhase !== 'firing') continue; 
                     projectile.active = false;
@@ -1772,6 +1822,7 @@ export class Game {
             this.boss.x = (this.canvas.width - this.boss.width) / 2;
             this.boss.y = Math.max(0, this.boss.y); 
         }
+        if (this.currentState !== GAME_STATES.SHOP) this.saveGame();
     }
 
     toggleFullScreen() {
@@ -1795,12 +1846,15 @@ export class Game {
     }
 
     returnToMainMenu(forceReset = false) {
-        if (this.currentState === GAME_STATES.PLAYING || this.currentState === GAME_STATES.BOSS_FIGHT || this.currentState === GAME_STATES.PAUSED) {
+        if (this.currentState === GAME_STATES.PLAYING || this.currentState === GAME_STATES.BOSS_FIGHT || this.currentState === GAME_STATES.PAUSED || this.currentState === GAME_STATES.SHOP) {
             this.saveGame();
         }
 
         if (forceReset) {
             this.resetGame(true);
+        } else if (this.inLevel) {
+            // Only set inLevel to false if we are actually leaving a level
+            this.inLevel = false;
         }
         this.showMenu(GAME_STATES.MAIN_MENU);
         if (this.bgMusic) {
@@ -1814,6 +1868,7 @@ export class Game {
         this.score = 0;
         this.enemiesDefeated = 0;
         this.projectilesFired = 0;
+        this.inLevel = false;
 
         if (!keepPlayerState) {
             this.money = 0;
@@ -1860,6 +1915,13 @@ export class Game {
         if (clearSave) {
             localStorage.removeItem('spaceInvadersGameState');
             this.achievementManager.reset();
+        } else {
+            const savedState = JSON.parse(localStorage.getItem('spaceInvadersGameState'));
+            if (savedState) {
+                savedState.inLevel = false;
+                savedState.activeGameData = null;
+                localStorage.setItem('spaceInvadersGameState', JSON.stringify(savedState));
+            }
         }
         this.updateMainMenuButtons();
     }
@@ -1954,6 +2016,7 @@ export class Game {
         this.isBossPhase = false;
         this.boss = null;
         this.totalBossesDefeated++;
+        this.inLevel = false;
 
         if (!this.completedLevels.includes(this.currentLevel)) {
             this.completedLevels.push(this.currentLevel);
@@ -2690,5 +2753,135 @@ export class Game {
         if (this.difficultySelect) {
             this.difficultySelect.value = this.currentDifficulty;
         }
+    }
+
+    captureGameState() {
+        const state = {
+            player: {
+                x: this.player.x,
+                y: this.player.y,
+                health: this.playerHealth,
+                invincible: this.playerInvincible,
+                invincibilityTimer: this.invincibilityTimer
+            },
+            enemies: this.enemies.map(e => ({ ...e })),
+            projectiles: this.projectiles.map(p => ({ ...p })),
+            enemyProjectiles: this.enemyProjectiles.map(p => ({ ...p })),
+            powerUps: this.powerUps.map(p => ({ ...p })),
+            boss: this.boss ? { ...this.boss } : null,
+            isBossPhase: this.isBossPhase,
+            score: this.score,
+            lastEnemySpawnTime: this.lastEnemySpawnTime,
+            activePowerUpEffects: JSON.parse(JSON.stringify(this.activePowerUpEffects)),
+            shipAbilityCooldowns: JSON.parse(JSON.stringify(this.shipAbilityCooldowns)),
+            activeShipAbilities: JSON.parse(JSON.stringify(this.activeShipAbilities)),
+        };
+        return state;
+    }
+
+    restoreGameState() {
+        try {
+            const savedState = JSON.parse(localStorage.getItem('spaceInvadersGameState'));
+            if (savedState && savedState.inLevel && savedState.activeGameData) {
+                const data = savedState.activeGameData;
+
+                this.initializeLevel();
+                this.initializeBase();
+                this.initializePlayer();
+
+                this.player.x = data.player.x;
+                this.player.y = data.player.y;
+                this.playerHealth = data.player.health;
+                this.playerInvincible = data.player.invincible;
+                this.invincibilityTimer = data.player.invincibilityTimer;
+
+                this.enemies = data.enemies.map(eData => {
+                    const enemy = new Enemy();
+                    Object.assign(enemy, eData);
+                    return enemy;
+                });
+                this.projectiles = data.projectiles.map(pData => {
+                    const proj = new Projectile();
+                    Object.assign(proj, pData);
+                    return proj;
+                });
+                this.enemyProjectiles = data.enemyProjectiles.map(pData => {
+                    const proj = new Projectile();
+                    Object.assign(proj, pData);
+                    return proj;
+                });
+                this.powerUps = data.powerUps.map(pData => {
+                    const powerUp = new PowerUp();
+                    Object.assign(powerUp, pData);
+                    return powerUp;
+                });
+
+                if (data.boss) {
+                    this.boss = new Enemy();
+                    Object.assign(this.boss, data.boss);
+                } else {
+                    this.boss = null;
+                }
+
+                this.isBossPhase = data.isBossPhase;
+                this.score = data.score;
+                this.lastEnemySpawnTime = data.lastEnemySpawnTime;
+                this.activePowerUpEffects = data.activePowerUpEffects;
+                this.shipAbilityCooldowns = data.shipAbilityCooldowns;
+                this.activeShipAbilities = data.activeShipAbilities;
+                
+                this.inLevel = true;
+                this.showMenu(this.isBossPhase ? GAME_STATES.BOSS_FIGHT : GAME_STATES.PLAYING);
+                if (this.soundEnabled && this.bgMusic && this.bgMusic.paused) {
+                    this.bgMusic.play().catch(e => console.error("Error playing music:", e));
+                }
+
+            } else {
+                console.warn("No active game state to restore. Starting new level map.");
+                this.showMenu(GAME_STATES.LEVEL_MAP);
+            }
+        } catch (e) {
+            console.error("Error restoring game state:", e);
+            this.showMenu(GAME_STATES.LEVEL_MAP); // Fallback
+        }
+    }
+
+    checkLightningCollision(player, lightning) {
+        for (const branch of lightning.branches) {
+            const playerRect = { x: player.x, y: player.y, width: player.width, height: player.height };
+            if (this.lineIntersectsRect(branch.start, branch.end, playerRect)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    lineIntersectsRect(p1, p2, rect) {
+        // Check if any of the rectangle's sides intersect the line segment
+        if (this.lineIntersectsLine(p1, p2, {x: rect.x, y: rect.y}, {x: rect.x + rect.width, y: rect.y})) return true;
+        if (this.lineIntersectsLine(p1, p2, {x: rect.x + rect.width, y: rect.y}, {x: rect.x + rect.width, y: rect.y + rect.height})) return true;
+        if (this.lineIntersectsLine(p1, p2, {x: rect.x + rect.width, y: rect.y + rect.height}, {x: rect.x, y: rect.y + rect.height})) return true;
+        if (this.lineIntersectsLine(p1, p2, {x: rect.x, y: rect.y + rect.height}, {x: rect.x, y: rect.y})) return true;
+
+        // Optional: Check if the line is completely inside the rectangle (for very small lines)
+        const inside = (p1.x >= rect.x && p1.x <= rect.x + rect.width && p1.y >= rect.y && p1.y <= rect.y + rect.height) &&
+                     (p2.x >= rect.x && p2.x <= rect.x + rect.width && p2.y >= rect.y && p2.y <= rect.y + rect.height);
+        return inside;
+    }
+    
+    lineIntersectsLine(l1p1, l1p2, l2p1, l2p2) {
+        const q = (l1p1.y - l2p1.y) * (l2p2.x - l2p1.x) - (l1p1.x - l2p1.x) * (l2p2.y - l2p1.y);
+        const d = (l1p2.x - l1p1.x) * (l2p2.y - l2p1.y) - (l1p2.y - l1p1.y) * (l2p2.x - l2p1.x);
+
+        if (d === 0) {
+            return false;
+        }
+
+        const r = q / d;
+
+        const q2 = (l1p1.y - l2p1.y) * (l1p2.x - l1p1.x) - (l1p1.x - l2p1.x) * (l1p2.y - l1p1.y);
+        const s = q2 / d;
+
+        return r >= 0 && r <= 1 && s >= 0 && s <= 1;
     }
 }

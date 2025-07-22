@@ -166,7 +166,7 @@ export class Enemy {
                     newProjectiles.push(new Projectile(
                         this.x + this.width / 2, this.y + this.height,
                         10, 20,
-                        0, 'down', 'pink', this.projectileDamage, 'boss', velocity
+                        0, 'down', 'pink', this.projectileDamage, 'boss_default', velocity
                     ));
                     this.lastShotTime = currentTime;
                 }
@@ -329,7 +329,7 @@ export class Enemy {
 
         switch (this.specialAttackType) {
             case 'chargeBeam': this.chargeTimer = 1.5; break;
-            case 'laserBarrage': this.chargeTimer = 1; break;
+            case 'laserBarrage': this.chargeTimer = 0.2; break;
             case 'summonMinions': this.chargeTimer = 0.5; break;
             case 'scatterShot': this.chargeTimer = 1.2; break;
         }
@@ -357,9 +357,11 @@ export class Enemy {
                 break;
             }
             case 'laserBarrage': {
-                this.isBarraging = true;
-                this.barrageCount = 0;
-                this.barrageTimer = 0;
+                const lightning = new Projectile(
+                    this.x, this.y + this.height, this.width, 0, 0, 'none', 'cyan', this.projectileDamage * 0.5,
+                    'lightningEffect', { x: 0, y: 0 }, 1.0, this, canvas
+                );
+                enemyProjectiles.push(lightning);
                 break;
             }
             case 'summonMinions': {
@@ -384,7 +386,7 @@ export class Enemy {
                     };
                     enemyProjectiles.push(new Projectile(
                         this.x + this.width / 2, this.y + this.height,
-                        12, 12, 0, 'down', 'lime', this.projectileDamage * 0.8, 'boss', velocity
+                        12, 12, 0, 'down', 'lime', this.projectileDamage * 0.8, 'scatter_shot', velocity
                     ));
                 }
                 break;
